@@ -6,4 +6,4 @@ use Framework\Core;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$core = new Core();
+$core = new Core(dirname(__DIR__));

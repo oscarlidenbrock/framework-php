@@ -6,4 +6,7 @@ namespace Framework;
 
 class Core
 {
+    public function __construct(private readonly string $rootPath)
+    {
+    }
 }

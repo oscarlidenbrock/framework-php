@@ -60,6 +60,36 @@ Use an established library before reimplementing general infrastructure. Prefer 
 
 Do not assume Docker, a container name, an operating system, a database host, a web server, local credentials or an existing executable. Inspect the repository before invoking commands. Docker may be provided as an optional development environment.
 
+## Namespace and Autoloading Rules
+
+The framework must follow PSR-4 autoloading conventions.
+
+Three primary namespace roots are defined:
+
+- `Framework\` maps to `/core/`.
+- `Module\{ModuleName}\` maps dynamically to the module's `/src/` directory.
+- `Theme\{ThemeName}\` maps dynamically to the theme's `/src/` directory.
+
+The framework core must use Composer's standard PSR-4 autoloader.
+
+Module and theme namespaces must be registered dynamically during application bootstrap using Composer's `ClassLoader::addPsr4()`.
+
+Module and theme namespaces must be discovered from their manifests and registered before their classes are instantiated.
+
+Modules and themes may reside in `core`, `contrib`, or `custom` directories without affecting their PHP namespaces.
+
+All namespaces must be unique, validated, case-consistent and independent of physical installation category.
+
+Class autoloading must remain separate from module activation and initialization.
+
+Never recursively scan the filesystem on every class lookup.
+
+Module and theme discovery results should support caching in production.
+
+Twig template discovery and overriding must be handled independently from PHP class autoloading.
+
+Do not implement a custom SPL autoloader when Composer already provides the required functionality.
+
 ## 4. Target repository organization
 
 Treat this as a **target layout**, not a demand to create every directory immediately:
@@ -67,17 +97,17 @@ Treat this as a **target layout**, not a demand to create every directory immedi
 ```text
 /
 ├── core/
-│   └── src/
-│       ├── Bootstrap/
-│       ├── Container/
-│       ├── Config/
-│       ├── Module/
-│       ├── Theme/
-│       ├── Routing/
-│       ├── Http/
-│       ├── Event/
-│       ├── Render/
-│       └── Contract/
+│   ├── Core.php
+│   ├── Bootstrap/
+│   ├── Container/
+│   ├── Config/
+│   ├── Module/
+│   ├── Theme/
+│   ├── Routing/
+│   ├── Http/
+│   ├── Event/
+│   ├── Render/
+│   └── Contract/
 ├── modules/
 │   ├── core/
 │   ├── contrib/
