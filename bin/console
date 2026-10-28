@@ -7,22 +7,70 @@ use Framework\Core;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$command = $argv[1] ?? 'help';
+$arguments = $_SERVER['argv'] ?? [];
+$command = $arguments[1] ?? 'help';
 if ($command === 'help') {
-    echo "Usage: php bin/console module:list\n";
+    echo "Usage: php bin/console module:list|module:publish-assets|theme:list|theme:publish-assets|database:status|database:validate|database:migrate [--connection=name] [--yes]\n";
     exit(0);
 }
-if ($command !== 'module:list') {
+if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate'], true)) {
     fwrite(STDERR, "Unknown command: {$command}\n");
+    exit(2);
+}
+$connectionName = null;
+$confirmed = false;
+foreach (array_slice($arguments, 2) as $option) {
+    if (str_starts_with($option, '--connection=') && $connectionName === null && str_starts_with($command, 'database:')) {
+        $connectionName = substr($option, strlen('--connection='));
+        if ($connectionName === '') {
+            fwrite(STDERR, "Connection name cannot be empty\n");
+            exit(2);
+        }
+    } elseif ($option === '--yes' && $command === 'database:migrate' && !$confirmed) {
+        $confirmed = true;
+    } else {
+        fwrite(STDERR, "Unknown or duplicate option: {$option}\n");
+        exit(2);
+    }
+}
+if ($command === 'database:migrate' && !$confirmed) {
+    fwrite(STDERR, "Schema changes require --yes\n");
     exit(2);
 }
 
 try {
     $core = new Core(dirname(__DIR__));
     $core->boot();
-    $enabled = array_fill_keys(array_map(static fn ($module): string => $module->id, $core->enabledModules()), true);
-    foreach ($core->modules()->discover() as $module) {
-        echo $module->id . "\t" . (isset($enabled[$module->id]) ? 'enabled' : 'disabled') . "\n";
+    if ($command === 'module:list') {
+        $enabled = array_fill_keys(array_map(static fn ($module): string => $module->id, $core->enabledModules()), true);
+        foreach ($core->modules()->discover() as $module) {
+            echo $module->id . "\t" . (isset($enabled[$module->id]) ? 'enabled' : 'disabled') . "\n";
+        }
+    } elseif ($command === 'module:publish-assets') {
+        $core->libraries()->publish('module');
+        echo "Module assets published\n";
+    } elseif ($command === 'theme:list') {
+        foreach ($core->themes()->discover() as $theme) {
+            echo $theme->id . "\t" . ($theme->id === $core->themes()->active()->id ? 'active' : 'available') . "\n";
+        }
+    } elseif ($command === 'theme:publish-assets') {
+        $core->libraries()->publish('theme');
+        echo "Theme assets published\n";
+    } elseif ($command === 'database:status') {
+        $database = $core->database($connectionName);
+        $pending = $database->pendingMigrations();
+        echo $database->name . "\t" . count($pending) . " pending migrations\n";
+        foreach ($pending as $version) {
+            echo $version . "\n";
+        }
+    } elseif ($command === 'database:validate') {
+        $database = $core->database($connectionName);
+        $database->connection()->getNativeConnection();
+        $core->databases()->validateMappings();
+        echo $database->name . "\tvalid\n";
+    } else {
+        $database = $core->database($connectionName);
+        echo $database->name . "\t" . $database->migrate() . " migrations applied\n";
     }
 } catch (Throwable $exception) {
     fwrite(STDERR, $exception->getMessage() . "\n");

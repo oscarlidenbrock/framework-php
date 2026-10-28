@@ -27,8 +27,12 @@ final class CoreTest extends TestCase
         self::assertArrayHasKey('example', $core->modules()->discover());
         $response = $core->handle(Request::create('/example', 'GET'));
         self::assertSame(200, $response->getStatusCode());
-        self::assertSame('Example module is running', $response->getContent());
-        self::assertSame('text/plain; charset=UTF-8', $response->headers->get('Content-Type'));
+        self::assertStringContainsString('<title>Example</title>', $response->getContent());
+        self::assertStringContainsString('<p>Example module is running</p>', $response->getContent());
+        self::assertStringContainsString('href="/assets/modules/example/css/example.css"', $response->getContent());
+        self::assertStringContainsString('media="screen"', $response->getContent());
+        self::assertStringContainsString('src="/assets/modules/example/js/example.js"', $response->getContent());
+        self::assertSame('text/html; charset=UTF-8', $response->headers->get('Content-Type'));
     }
 
     public function testNotFoundAndMethodNotAllowed(): void
@@ -39,6 +43,27 @@ final class CoreTest extends TestCase
         $response = $core->handle(Request::create('/example', 'POST'));
         self::assertSame(405, $response->getStatusCode());
         self::assertSame('GET', $response->headers->get('Allow'));
+    }
+
+    public function testActiveThemeOverridesModuleTemplateAndInheritsLayout(): void
+    {
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: contrast\n"));
+
+        $response = $core->handle(Request::create('/example'));
+        self::assertSame(200, $response->getStatusCode());
+        self::assertStringContainsString('<main class="contrast-example">', $response->getContent());
+        self::assertStringContainsString('<title>Example</title>', $response->getContent());
+        self::assertSame('contrast', $core->themes()->active()->id);
+        self::assertSame('default', $core->themes()->administration()->id);
+    }
+
+    public function testMissingActiveThemeFailsBoot(): void
+    {
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: missing\n"));
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Active theme not found: missing');
+        $core->boot();
     }
 
     public function testDisabledModuleHasNoRouteButRemainsDiscovered(): void

@@ -1,3 +1,7 @@
 enabled_modules:
   - example
 module_discovery_cache: false
+active_theme: default
+admin_theme: default
+theme_discovery_cache: false
+twig_cache: false

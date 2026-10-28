@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace Framework;
 
 use Framework\Bootstrap\Bootstrap;
+use Framework\Asset\AssetManager;
+use Framework\Asset\LibraryRegistry;
+use Framework\Database\DatabaseManager;
+use Framework\Database\DatabaseRegistry;
 use Framework\Module\ModuleManager;
 use Framework\Module\Module;
+use Framework\Template\TemplateManager;
+use Framework\Theme\ThemeManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -40,5 +46,35 @@ class Core
     public function enabledModules(): array
     {
         return $this->bootstrap->enabledModules();
+    }
+
+    public function themes(): ThemeManager
+    {
+        return $this->bootstrap->themes();
+    }
+
+    public function templates(): TemplateManager
+    {
+        return $this->bootstrap->templates();
+    }
+
+    public function libraries(): LibraryRegistry
+    {
+        return $this->bootstrap->libraries();
+    }
+
+    public function assets(): AssetManager
+    {
+        return $this->bootstrap->assets();
+    }
+
+    public function database(?string $name = null): DatabaseManager
+    {
+        return $this->bootstrap->databases()->manager($name);
+    }
+
+    public function databases(): DatabaseRegistry
+    {
+        return $this->bootstrap->databases();
     }
 }

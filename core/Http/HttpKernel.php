@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Framework\Http;
 
+use Framework\Asset\AssetManager;
+use Framework\Database\DatabaseRegistry;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,10 +20,23 @@ final class HttpKernel
     public function __construct(
         private readonly RouteCollection $routes,
         private readonly ContainerInterface $container,
+        private readonly AssetManager $assets,
+        private readonly ?DatabaseRegistry $databases = null,
     ) {
     }
 
     public function handle(Request $request): Response
+    {
+        $this->assets->reset();
+        try {
+            return $this->dispatch($request);
+        } finally {
+            $this->assets->reset();
+            $this->databases?->resetRequest();
+        }
+    }
+
+    private function dispatch(Request $request): Response
     {
         $context = new RequestContext();
         $context->fromRequest($request);

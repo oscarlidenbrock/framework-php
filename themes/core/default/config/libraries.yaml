@@ -1,0 +1,7 @@
+global:
+  version: 1.0.0
+  css:
+    css/site.css
+  js:
+    js/site.js:
+      defer: true

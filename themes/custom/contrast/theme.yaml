@@ -1,0 +1,6 @@
+id: contrast
+name: Contrast
+namespace: Contrast
+version: 0.1.0
+parent: default
+libraries: []

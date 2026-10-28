@@ -78,6 +78,14 @@ final class ModuleManagerTest extends TestCase
         (new ModuleManager($this->root, $this->loader()))->discover();
     }
 
+    public function testReservesThemeIdForTwigNamespace(): void
+    {
+        $this->module('custom', 'theme', 'ConflictingModule');
+
+        $this->expectException(InvalidArgumentException::class);
+        (new ModuleManager($this->root, $this->loader()))->discover();
+    }
+
     public function testCacheIsRebuiltWhenManifestChanges(): void
     {
         $path = $this->module('custom', 'first', 'CachedFirst');
@@ -90,13 +98,32 @@ final class ModuleManagerTest extends TestCase
         self::assertSame(['missing'], $fresh->discover()['first']->requires);
     }
 
+    public function testRejectsLegacyAssetsInManifest(): void
+    {
+        $this->module('custom', 'asset', 'LegacyAssetModule', [], "assets:\n  css: [css/site.css]\n");
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Direct module assets are forbidden');
+        (new ModuleManager($this->root, $this->loader()))->discover();
+    }
+
+    public function testModuleDatabaseAssignmentSurvivesDiscoveryCache(): void
+    {
+        $this->module('custom', 'record', 'RecordModule', [], "database:\n  entity_manager: legacy\n  mappings:\n    analytics: [src/AnalyticsEntity]\n");
+        $loader = $this->loader();
+        $first = (new ModuleManager($this->root, $loader, true))->discover()['record'];
+        $cached = (new ModuleManager($this->root, $loader, true))->discover()['record'];
+        self::assertSame('legacy', $first->database['entity_manager']);
+        self::assertSame($first->database, $cached->database);
+    }
+
     /** @param list<string> $requires */
-    private function module(string $category, string $id, string $namespace, array $requires = []): string
+    private function module(string $category, string $id, string $namespace, array $requires = [], string $extra = ''): string
     {
         $path = $this->root . "/modules/{$category}/{$id}";
         mkdir($path);
         $dependencies = $requires === [] ? '[]' : '[' . implode(', ', $requires) . ']';
-        file_put_contents($path . '/module.yaml', "id: {$id}\nname: {$id}\nnamespace: {$namespace}\nversion: 0.1.0\nrequires: {$dependencies}\n");
+        file_put_contents($path . '/module.yaml', "id: {$id}\nname: {$id}\nnamespace: {$namespace}\nversion: 0.1.0\nrequires: {$dependencies}\n{$extra}");
 
         return $path;
     }

@@ -1,0 +1,12 @@
+database:
+  default: default
+  connections:
+    default:
+      url_env: DATABASE_URL
+      orm: true
+    legacy:
+      url_env: LEGACY_DATABASE_URL
+      orm: true
+    analytics:
+      url_env: ANALYTICS_DATABASE_URL
+      orm: false

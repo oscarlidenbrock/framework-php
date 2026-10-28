@@ -1,0 +1,8 @@
+base:
+  version: 1.0.0
+  css:
+    css/example.css:
+      media: screen
+  js:
+    js/example.js:
+      defer: true

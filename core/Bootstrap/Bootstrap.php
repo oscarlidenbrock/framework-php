@@ -5,12 +5,22 @@ declare(strict_types=1);
 namespace Framework\Bootstrap;
 
 use Composer\Autoload\ClassLoader;
+use Framework\Asset\AssetManager;
+use Framework\Asset\LibraryRegistry;
+use Framework\Asset\LibraryResolver;
 use Framework\Config\ConfigManager;
+use Framework\Database\DatabaseRegistry;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use Framework\Http\HttpKernel;
 use Framework\Module\ModuleManager;
 use Framework\Module\Module;
+use Framework\Template\TemplateManager;
+use Framework\Theme\ThemeManager;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -20,6 +30,11 @@ final class Bootstrap
 {
     private ?HttpKernel $kernel = null;
     private ?ModuleManager $modules = null;
+    private ?ThemeManager $themes = null;
+    private ?TemplateManager $templates = null;
+    private ?LibraryRegistry $libraries = null;
+    private ?AssetManager $assets = null;
+    private ?DatabaseRegistry $databases = null;
     /** @var list<Module> */
     private array $enabledModules = [];
 
@@ -46,8 +61,50 @@ final class Bootstrap
         $modules->discover();
         $modules->registerNamespaces();
         $enabled = $modules->enabled($config['enabled_modules']);
+        $databases = new DatabaseRegistry($this->rootPath, $this->rootPath . '/config/database.yaml', $enabled);
+
+        $themes = new ThemeManager($this->rootPath, $loader, $config['theme_discovery_cache']);
+        $themes->discover();
+        $themes->registerNamespaces();
+        $themes->select($config['active_theme'], $config['admin_theme']);
+        foreach ($modules->discover() as $module) {
+            if (isset($themes->discover()[$module->id])) {
+                throw new \InvalidArgumentException("Extension ID shared by module and theme: {$module->id}");
+            }
+        }
+        $lineage = array_reverse($themes->activeLineage());
+        $libraries = new LibraryRegistry($this->rootPath, $enabled, $lineage);
+        $resolver = new LibraryResolver($libraries);
+        $resolver->resolve(array_keys($libraries->all()));
+        $assets = new AssetManager($resolver, $themes->globalLibraries());
+        $assets->prepare();
+        $assets->reset();
+        $templates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $assets);
 
         $container = new ContainerBuilder();
+        $container->set(TemplateManager::class, $templates);
+        $container->set(AssetManager::class, $assets);
+        $container->set(DatabaseRegistry::class, $databases);
+        foreach ($databases->all() as $name => $manager) {
+            $managerId = 'database.' . $name;
+            $container->set($managerId, $manager);
+            $connection = new Definition(Connection::class);
+            $connection->setFactory([new Reference($managerId), 'connection']);
+            $connection->setPublic(true);
+            $container->setDefinition($managerId . '.connection', $connection);
+            if ($manager->hasOrm()) {
+                $entityManager = new Definition(EntityManagerInterface::class);
+                $entityManager->setFactory([new Reference($managerId), 'entityManager']);
+                $entityManager->setPublic(true);
+                $container->setDefinition($managerId . '.entity_manager', $entityManager);
+            }
+        }
+        if (($defaultDatabase = $databases->defaultName()) !== null) {
+            $container->setAlias(Connection::class, 'database.' . $defaultDatabase . '.connection')->setPublic(true);
+            if ($databases->manager()->hasOrm()) {
+                $container->setAlias(EntityManagerInterface::class, 'database.' . $defaultDatabase . '.entity_manager')->setPublic(true);
+            }
+        }
         $routes = new RouteCollection();
 
         foreach ($enabled as $module) {
@@ -70,7 +127,12 @@ final class Bootstrap
         }
         $this->enabledModules = $enabled;
         $this->modules = $modules;
-        $this->kernel = new HttpKernel($routes, $container);
+        $this->themes = $themes;
+        $this->templates = $templates;
+        $this->libraries = $libraries;
+        $this->assets = $assets;
+        $this->databases = $databases;
+        $this->kernel = new HttpKernel($routes, $container, $assets, $databases);
     }
 
     public function kernel(): HttpKernel
@@ -93,6 +155,41 @@ final class Bootstrap
         $this->boot();
 
         return $this->enabledModules;
+    }
+
+    public function themes(): ThemeManager
+    {
+        $this->boot();
+
+        return $this->themes;
+    }
+
+    public function templates(): TemplateManager
+    {
+        $this->boot();
+
+        return $this->templates;
+    }
+
+    public function libraries(): LibraryRegistry
+    {
+        $this->boot();
+
+        return $this->libraries;
+    }
+
+    public function assets(): AssetManager
+    {
+        $this->boot();
+
+        return $this->assets;
+    }
+
+    public function databases(): DatabaseRegistry
+    {
+        $this->boot();
+
+        return $this->databases;
     }
 
     private function loadRoutes(RouteCollection $routes, string $path): void

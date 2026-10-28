@@ -149,6 +149,7 @@ modules/custom/blog/
 ├── config/
 │   ├── routes.yaml
 │   ├── services.yaml
+│   ├── libraries.yaml
 │   ├── permissions.yaml
 │   └── settings.yaml
 ├── src/
@@ -194,6 +195,16 @@ Do not execute arbitrary PHP files while scanning modules. Use validated metadat
 
 The module loader must not depend on the presence of an HTTP request: CLI commands and tests need the same registration pipeline.
 
+### Mandatory asset library rules
+
+- All modules and themes must declare CSS and JavaScript resources through named libraries in `config/libraries.yaml`. Direct asset declarations in controllers, `module.yaml`, or `theme.yaml` are forbidden and rejected.
+- In each library, `css` and `js` accept a single path scalar or a mapping from file paths to option mappings. Do not use a `path` property or a list of file definitions.
+- Library IDs use `{extension_id}/{library_name}`. Module and theme extension IDs are globally unique. Only enabled modules and the active theme lineage register libraries.
+- `TemplateManager::renderResponse($template, ['libraries' => [...]], $variables, $status)` attaches named libraries. `Framework\Asset\AssetManager::attachLibrary()` is injectable into controllers and services for the same purpose. The former `css` and `js` response keys are rejected.
+- `theme.yaml` may list global library IDs under `libraries`. Parent theme libraries attach before child theme libraries; dependencies are resolved in stable topological order and cycles or unavailable libraries fail.
+- Asset definitions are normalized and validated once during library registration. A response-local registry deduplicates files and rejects conflicting attributes. The HTTP kernel resets attachment state on every request, including error paths.
+- Publication commands copy only files declared by registered libraries to ignored files under `public/assets/`. Runtime rendering does not copy files. The complete format and behavior are in `docs/assets.md` and ADR 0005.
+
 ## 6. Theme system and Twig
 
 Themes are discoverable, selectable and configurable independently of modules. Use `theme.yaml` as the theme manifest.
@@ -203,7 +214,9 @@ Suggested theme layout:
 ```text
 themes/custom/mytheme/
 ├── theme.yaml
+├── src/                 # Optional PHP classes
 ├── config/
+│   ├── libraries.yaml
 │   └── settings.yaml
 ├── templates/
 │   ├── layouts/
@@ -230,6 +243,17 @@ Required design goals:
 - Proper escaping, URL generation and asset URLs through framework services/extensions.
 
 Define a single template namespace and override strategy; test its lookup order and failure behavior. Keep layout selection separate from controller logic. Never give templates arbitrary access to the entire service container.
+
+### Implemented theme and template rules
+
+- `active_theme` and `admin_theme` in `config/app.yaml` select public and administration themes separately. Administration rendering is not implemented yet.
+- A theme declares `id`, `name`, `namespace`, `version`, optional `parent`, and global library IDs under `libraries` in `theme.yaml`. Discovery validates IDs, namespaces and the complete parent graph before selection. `Theme\{Namespace}\` is registered with Composer for the theme's optional `src/` directory.
+- Twig uses `@theme/...` for active-theme templates, falling back through parent themes. A module's `@{module_id}/...` searches the active theme's `templates/modules/{module_id}/`, then the same directory in each parent, then the enabled module's own `templates/` directory. The module ID `theme` is reserved for Twig's `@theme` namespace.
+- Controllers may receive `Framework\Template\TemplateManager` through the container and return its HTML `Response`. Existing controllers returning a `Response` directly remain supported.
+- Twig autoescaping and strict variables are enabled. Twig cache is disabled in development and configurable for production through `twig_cache`; production cache is stored outside `public/`.
+- Theme CSS and JS are declared in `config/libraries.yaml` and published explicitly to `public/assets/themes/`. Source assets remain in the theme directory. No template receives the service container.
+- Twig layouts render through `assets_css()` and `assets_js('head'|'body')`. These functions use the central renderer, escape URLs and attributes, and expose no attachment function from Twig. See `docs/assets.md` and ADR 0005.
+- The detailed format, lookup order, cache behavior and publication command are in `docs/themes.md` and ADR 0002.
 
 ## 7. HTTP, routing, controllers and rendering
 
@@ -266,6 +290,8 @@ Keep these concepts explicit:
 Do not equate a dynamic content type with a manually written Doctrine ORM class.
 
 ### Persistence strategy
+
+The implemented persistence layer supports multiple named relational connections. `Framework\Database\DatabaseRegistry` selects and owns lazy `DatabaseManager` instances; `Core::database(?string $name)` is the public facade. Each manager has its own Doctrine DBAL connection, optional Doctrine ORM EntityManager, module attribute mappings, and independent Doctrine Migrations history. Configuration lives in optional `config/database.yaml`; credentials must come from environment variables or other untracked deployment configuration. Enabled modules assign mappings and migrations to a connection through their manifest. Named connection and EntityManager service IDs are available for constructor injection. Do not connect during bootstrap, share ORM identity maps across HTTP requests, create cross-connection ORM associations, or run migrations during HTTP handling. Schema changes through the CLI require explicit authorization. See `docs/database.md` and ADR 0006.
 
 - Use Doctrine DBAL as the baseline for schema introspection, query execution, transactions and database-platform capabilities.
 - Doctrine ORM is suitable for stable, code-defined entities where it helps.

@@ -1,6 +1,8 @@
 .idea
 /vendor/
 /storage/cache/
+/public/assets/
+/config/database.yaml
 /.phpunit.cache/
 /.phpunit.result.cache
 /.php-cs-fixer.cache
