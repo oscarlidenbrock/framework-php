@@ -24,7 +24,7 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 ## Configuration and checks
 
-`config/app.yaml` lists enabled module IDs and selects `active_theme` and `admin_theme`. Set `active_theme: contrast` to see the child theme override the example page; set it back to `default` to use the module template. Removing `example` from `enabled_modules` leaves it discoverable but makes `/example` return 404.
+`config/app.yaml` lists enabled module IDs and selects `active_theme` and `admin_theme`. The example module is enabled by default. Set `active_theme: contrast` to see the child theme override its page; set it back to `default` to use the module template. Disabling the module leaves it discoverable but makes `/example` return 404.
 
 `config/workspaces.yaml` maps HTTP hostnames to workspace directories. The included `development` workspace accepts `localhost` and `127.0.0.1`. CLI commands require `APP_WORKSPACE` or `--workspace`. See [docs/workspaces.md](docs/workspaces.md) before adding deployment hostnames or overrides.
 

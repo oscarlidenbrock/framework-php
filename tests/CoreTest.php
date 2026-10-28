@@ -19,7 +19,7 @@ final class CoreTest extends TestCase
 
     public function testBootAndExampleRoute(): void
     {
-        $core = new Core(dirname(__DIR__), workspace: 'development');
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\n"), 'development');
         $core->boot();
         $core->boot();
 
@@ -37,7 +37,7 @@ final class CoreTest extends TestCase
 
     public function testNotFoundAndMethodNotAllowed(): void
     {
-        $core = new Core(dirname(__DIR__), workspace: 'development');
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\n"), 'development');
 
         self::assertSame(404, $core->handle(Request::create('/missing'))->getStatusCode());
         $response = $core->handle(Request::create('/example', 'POST'));
