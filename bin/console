@@ -8,30 +8,36 @@ use Framework\Core;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $arguments = $_SERVER['argv'] ?? [];
-$command = $arguments[1] ?? 'help';
+$command = null;
+$workspace = null;
+$connectionName = null;
+$confirmed = false;
+foreach (array_slice($arguments, 1) as $argument) {
+    if (str_starts_with($argument, '--workspace=') && $workspace === null) {
+        $workspace = substr($argument, strlen('--workspace='));
+    } elseif ($command === null && !str_starts_with($argument, '--')) {
+        $command = $argument;
+    } elseif (str_starts_with($argument, '--connection=') && $connectionName === null) {
+        $connectionName = substr($argument, strlen('--connection='));
+    } elseif ($argument === '--yes' && !$confirmed) {
+        $confirmed = true;
+    } else {
+        fwrite(STDERR, "Unknown or duplicate option: {$argument}\n");
+        exit(2);
+    }
+}
+$command ??= 'help';
 if ($command === 'help') {
-    echo "Usage: php bin/console module:list|module:publish-assets|theme:list|theme:publish-assets|database:status|database:validate|database:migrate [--connection=name] [--yes]\n";
+    echo "Usage: php bin/console [--workspace=name] module:list|module:publish-assets|theme:list|theme:publish-assets|database:status|database:validate|database:migrate [--connection=name] [--yes]\n";
     exit(0);
 }
 if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate'], true)) {
     fwrite(STDERR, "Unknown command: {$command}\n");
     exit(2);
 }
-$connectionName = null;
-$confirmed = false;
-foreach (array_slice($arguments, 2) as $option) {
-    if (str_starts_with($option, '--connection=') && $connectionName === null && str_starts_with($command, 'database:')) {
-        $connectionName = substr($option, strlen('--connection='));
-        if ($connectionName === '') {
-            fwrite(STDERR, "Connection name cannot be empty\n");
-            exit(2);
-        }
-    } elseif ($option === '--yes' && $command === 'database:migrate' && !$confirmed) {
-        $confirmed = true;
-    } else {
-        fwrite(STDERR, "Unknown or duplicate option: {$option}\n");
-        exit(2);
-    }
+if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') || $confirmed && $command !== 'database:migrate') {
+    fwrite(STDERR, "Invalid command option.\n");
+    exit(2);
 }
 if ($command === 'database:migrate' && !$confirmed) {
     fwrite(STDERR, "Schema changes require --yes\n");
@@ -39,7 +45,7 @@ if ($command === 'database:migrate' && !$confirmed) {
 }
 
 try {
-    $core = new Core(dirname(__DIR__));
+    $core = new Core(dirname(__DIR__), workspace: $workspace);
     $core->boot();
     if ($command === 'module:list') {
         $enabled = array_fill_keys(array_map(static fn ($module): string => $module->id, $core->enabledModules()), true);

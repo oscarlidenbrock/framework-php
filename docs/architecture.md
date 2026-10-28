@@ -15,6 +15,7 @@
 | Named asset libraries, dependencies and response-local attachment | Implemented |
 | Module lifecycle commands and permissions | Planned |
 | Optional named DBAL connections, per-connection ORM and module migrations | Implemented |
+| Host-selected workspaces and recursive YAML configuration overrides | Implemented |
 | Per-file asset HTML attributes and script placement | Implemented |
 | Theme regions, block placement and asset build pipeline | Planned |
 | Configurable content | Planned |
@@ -22,3 +23,5 @@
 The kernel does not depend on the example module. Its services, routes and Twig templates are loaded through general registration pipelines. Twig template lookup is separate from PHP autoloading.
 
 `DatabaseRegistry` reads optional `config/database.yaml`, owns lazy `DatabaseManager` instances and assigns enabled module mappings and migrations to named connections. Each manager owns its DBAL connection, optional ORM EntityManager and Doctrine Migrations history. The HTTP kernel clears initialized EntityManagers after each request. See [database.md](database.md) and [decision 0006](decisions/0006-multi-database-doctrine.md).
+
+`WorkspaceResolver` selects a workspace before boot. One `ConfigManager` merges global YAML with the selected workspace's overrides; Bootstrap passes those effective values to modules, themes, Twig and Doctrine. See [workspaces.md](workspaces.md) and [decision 0007](decisions/0007-workspace-configuration.md).

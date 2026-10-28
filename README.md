@@ -9,10 +9,10 @@ A standalone PHP modular framework. The runtime discovers modules and themes, bu
 
 ```sh
 composer install
-php bin/console module:list
-php bin/console module:publish-assets
-php bin/console theme:list
-php bin/console theme:publish-assets
+APP_WORKSPACE=development php bin/console module:list
+APP_WORKSPACE=development php bin/console module:publish-assets
+APP_WORKSPACE=development php bin/console theme:list
+APP_WORKSPACE=development php bin/console theme:publish-assets
 php -S 127.0.0.1:8000 -t public public/index.php
 ```
 
@@ -26,6 +26,8 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 `config/app.yaml` lists enabled module IDs and selects `active_theme` and `admin_theme`. Set `active_theme: contrast` to see the child theme override the example page; set it back to `default` to use the module template. Removing `example` from `enabled_modules` leaves it discoverable but makes `/example` return 404.
 
+`config/workspaces.yaml` maps HTTP hostnames to workspace directories. The included `development` workspace accepts `localhost` and `127.0.0.1`. CLI commands require `APP_WORKSPACE` or `--workspace`. See [docs/workspaces.md](docs/workspaces.md) before adding deployment hostnames or overrides.
+
 Persistence is optional. To configure it, copy `config/database.example.yaml` to ignored `config/database.yaml` and set the named environment variables outside the repository. See [docs/database.md](docs/database.md) for DBAL and ORM APIs, module mappings, and per-connection migration commands.
 
 `module_discovery_cache` and `theme_discovery_cache` store validated discovery data in `storage/cache/`. `twig_cache: true` stores compiled Twig templates there. Use these settings in production; remove the corresponding cache directories after deployments that preserve timestamps or change templates while auto reload is disabled.
@@ -37,4 +39,4 @@ vendor/bin/php-cs-fixer fix --dry-run --diff --sequential
 composer validate
 ```
 
-See [docs/modules.md](docs/modules.md) for module services and routes, [docs/themes.md](docs/themes.md) for themes and Twig overrides, [docs/assets.md](docs/assets.md) for mandatory asset libraries, and [docs/architecture.md](docs/architecture.md) for feature status.
+See [docs/modules.md](docs/modules.md) for module services and routes, [docs/themes.md](docs/themes.md) for themes and Twig overrides, [docs/assets.md](docs/assets.md) for mandatory asset libraries, [docs/workspaces.md](docs/workspaces.md) for configuration inheritance, and [docs/architecture.md](docs/architecture.md) for feature status.

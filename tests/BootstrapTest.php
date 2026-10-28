@@ -15,6 +15,8 @@ final class BootstrapTest extends TestCase
         $this->root = sys_get_temp_dir() . '/framework-bootstrap-' . bin2hex(random_bytes(8));
         mkdir($this->root . '/vendor', 0775, true);
         mkdir($this->root . '/config');
+        mkdir($this->root . '/config/workspaces/development', 0775, true);
+        file_put_contents($this->root . '/config/workspaces.yaml', "localhost: development\n");
         mkdir($this->root . '/modules/custom/fixture/config', 0775, true);
         mkdir($this->root . '/modules/custom/fixture/src/Controller', 0775, true);
         mkdir($this->root . '/themes/core/default/templates/layouts', 0775, true);
@@ -48,7 +50,7 @@ PHP);
 
     public function testIndependentModuleProvidesRouteAndService(): void
     {
-        $core = new Core($this->root);
+        $core = new Core($this->root, workspace: 'development');
         self::assertSame('Fixture works', $core->handle(Request::create('/fixture'))->getContent());
         self::assertSame(['fixture'], array_map(static fn ($module): string => $module->id, $core->enabledModules()));
     }
@@ -57,14 +59,14 @@ PHP);
     {
         file_put_contents($this->root . '/modules/custom/fixture/config/routes.yaml', "fixture.index:\n  path: /fixture\n  methods: [GET]\n  controller: fixture.controller\n  access: admin\n");
         $this->expectException(InvalidArgumentException::class);
-        (new Core($this->root))->boot();
+        (new Core($this->root, workspace: 'development'))->boot();
     }
 
     public function testControllerMustBePublicService(): void
     {
         file_put_contents($this->root . '/modules/custom/fixture/config/services.yaml', "services:\n  fixture.controller:\n    class: Module\\FixtureGreeting\\Controller\\GreetingController\n");
         $this->expectExceptionMessage('Route controller must be a public service');
-        (new Core($this->root))->boot();
+        (new Core($this->root, workspace: 'development'))->boot();
     }
 
     public function testNamedDatabaseServicesAndDefaultAliasesAreInjectable(): void
@@ -88,7 +90,7 @@ final class InjectedController
 }
 PHP);
         file_put_contents($this->root . '/modules/custom/fixture/config/services.yaml', "services:\n  fixture.controller:\n    class: Module\\FixtureGreeting\\Controller\\InjectedController\n    arguments: ['@Doctrine\\DBAL\\Connection', '@database.legacy.connection', '@Doctrine\\ORM\\EntityManagerInterface', '@database.legacy.entity_manager']\n    public: true\n");
-        $core = new Core($this->root);
+        $core = new Core($this->root, workspace: 'development');
         self::assertSame($core->database(), $core->database('primary'));
         self::assertNotSame($core->database(), $core->database('legacy'));
         self::assertSame('injected', $core->handle(Request::create('/fixture'))->getContent());
@@ -124,7 +126,7 @@ PHP);
     private function console(array $arguments): array
     {
         $pipes = [];
-        $process = proc_open([PHP_BINARY, $this->root . '/bin/console', ...$arguments], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->root);
+        $process = proc_open([PHP_BINARY, $this->root . '/bin/console', '--workspace=development', ...$arguments], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->root);
         if (!is_resource($process)) {
             throw new RuntimeException('Cannot start CLI fixture.');
         }

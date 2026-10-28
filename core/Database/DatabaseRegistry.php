@@ -13,14 +13,16 @@ final class DatabaseRegistry
     private array $managers = [];
     private ?string $defaultName = null;
 
-    /** @param list<Module> $enabledModules */
-    public function __construct(string $rootPath, string $configPath, array $enabledModules)
+    /** @param list<Module> $enabledModules
+     *  @param array<string, mixed>|null $effectiveConfiguration
+     */
+    public function __construct(string $rootPath, string $configPath, array $enabledModules, ?array $effectiveConfiguration = null, string $workspace = 'default')
     {
-        if (!is_file($configPath)) {
+        if ($effectiveConfiguration === null && !is_file($configPath)) {
             $this->assertNoModuleDatabaseConfiguration($enabledModules);
             return;
         }
-        $document = Yaml::parseFile($configPath);
+        $document = $effectiveConfiguration ?? Yaml::parseFile($configPath);
         if (!is_array($document) || array_keys($document) !== ['database'] || !is_array($document['database']) || array_diff(array_keys($document['database']), ['default', 'connections']) !== []) {
             throw new \InvalidArgumentException('Invalid database configuration structure.');
         }
@@ -33,27 +35,27 @@ final class DatabaseRegistry
 
         $definitions = [];
         foreach ($connections as $name => $definition) {
-            if (!is_string($name) || !self::validName($name) || !is_array($definition) || array_is_list($definition) && $definition !== [] || array_diff(array_keys($definition), ['url_env', 'params', 'orm', 'migrations_table']) !== []) {
+            if (!is_string($name) || !self::validName($name) || !is_array($definition) || array_is_list($definition) && $definition !== []) {
                 throw new \InvalidArgumentException("Invalid database connection definition: {$name}");
             }
             $urlEnv = $definition['url_env'] ?? null;
-            $params = $definition['params'] ?? null;
+            $flatParams = array_diff_key($definition, array_flip(['url_env', 'params', 'orm', 'migrations_table']));
+            $nestedParams = $definition['params'] ?? null;
+            $params = $nestedParams === null ? $flatParams : (is_array($nestedParams) ? array_replace($flatParams, $nestedParams) : $nestedParams);
             $orm = $definition['orm'] ?? false;
             $table = $definition['migrations_table'] ?? 'doctrine_migration_versions';
-            if ($urlEnv !== null && (!is_string($urlEnv) || !preg_match('/^[A-Z][A-Z0-9_]*$/', $urlEnv)) || $params !== null && (!is_array($params) || $params === [] || array_is_list($params)) || $urlEnv === null && $params === null || !is_bool($orm) || !is_string($table) || !preg_match('/^[a-z][a-z0-9_]*$/', $table)) {
+            if ($urlEnv !== null && (!is_string($urlEnv) || !preg_match('/^[A-Z][A-Z0-9_]*$/', $urlEnv)) || !is_array($params) || $params !== [] && array_is_list($params) || $urlEnv === null && $params === [] || !is_bool($orm) || !is_string($table) || !preg_match('/^[a-z][a-z0-9_]*$/', $table)) {
                 throw new \InvalidArgumentException("Invalid database connection options: {$name}");
             }
-            if ($params !== null) {
-                foreach ($params as $key => $value) {
-                    if (!is_string($key) || !preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $key)) {
-                        throw new \InvalidArgumentException("Invalid DBAL parameter name for connection {$name}");
-                    }
-                }
-                if ($urlEnv === null && !isset($params['driver']) && !isset($params['url']) && !isset($params['driverClass'])) {
-                    throw new \InvalidArgumentException("DBAL parameters need a driver or URL for connection {$name}");
+            foreach ($params as $key => $value) {
+                if (!is_string($key) || !preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $key)) {
+                    throw new \InvalidArgumentException("Invalid DBAL parameter name for connection {$name}");
                 }
             }
-            $definitions[$name] = ['url_env' => $urlEnv, 'params' => $params ?? [], 'orm' => $orm, 'migrations_table' => $table];
+            if ($urlEnv === null && !isset($params['driver']) && !isset($params['url']) && !isset($params['driverClass'])) {
+                throw new \InvalidArgumentException("DBAL parameters need a driver or URL for connection {$name}");
+            }
+            $definitions[$name] = ['url_env' => $urlEnv, 'params' => $params, 'orm' => $orm, 'migrations_table' => $table];
         }
 
         $mappings = array_fill_keys(array_keys($definitions), []);
@@ -127,7 +129,7 @@ final class DatabaseRegistry
             if (!$definition['orm'] && $mappings[$name] !== []) {
                 throw new \InvalidArgumentException("Entity mappings require ORM on connection {$name}");
             }
-            $this->managers[$name] = new DatabaseManager($name, $definition, $mappings[$name], $migrations[$name], $rootPath);
+            $this->managers[$name] = new DatabaseManager($name, $definition, $mappings[$name], $migrations[$name], $rootPath, $workspace);
         }
         $this->defaultName = $default;
     }

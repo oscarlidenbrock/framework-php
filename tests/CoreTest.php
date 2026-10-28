@@ -19,7 +19,7 @@ final class CoreTest extends TestCase
 
     public function testBootAndExampleRoute(): void
     {
-        $core = new Core(dirname(__DIR__));
+        $core = new Core(dirname(__DIR__), workspace: 'development');
         $core->boot();
         $core->boot();
 
@@ -37,7 +37,7 @@ final class CoreTest extends TestCase
 
     public function testNotFoundAndMethodNotAllowed(): void
     {
-        $core = new Core(dirname(__DIR__));
+        $core = new Core(dirname(__DIR__), workspace: 'development');
 
         self::assertSame(404, $core->handle(Request::create('/missing'))->getStatusCode());
         $response = $core->handle(Request::create('/example', 'POST'));
@@ -47,7 +47,7 @@ final class CoreTest extends TestCase
 
     public function testActiveThemeOverridesModuleTemplateAndInheritsLayout(): void
     {
-        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: contrast\n"));
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: contrast\n"), 'development');
 
         $response = $core->handle(Request::create('/example'));
         self::assertSame(200, $response->getStatusCode());
@@ -59,7 +59,7 @@ final class CoreTest extends TestCase
 
     public function testMissingActiveThemeFailsBoot(): void
     {
-        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: missing\n"));
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: missing\n"), 'development');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Active theme not found: missing');
@@ -68,7 +68,7 @@ final class CoreTest extends TestCase
 
     public function testDisabledModuleHasNoRouteButRemainsDiscovered(): void
     {
-        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: []\n"));
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: []\n"), 'development');
 
         self::assertSame([], $core->enabledModules());
         self::assertArrayHasKey('example', $core->modules()->discover());
@@ -77,7 +77,7 @@ final class CoreTest extends TestCase
 
     public function testUnknownEnabledModuleFailsDuringBoot(): void
     {
-        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [missing]\n"));
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [missing]\n"), 'development');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Enabled module not found: missing');
@@ -86,7 +86,7 @@ final class CoreTest extends TestCase
 
     public function testInvalidConfigFailsDuringBoot(): void
     {
-        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: example\n"));
+        $core = new Core(dirname(__DIR__), $this->config("enabled_modules: example\n"), 'development');
 
         $this->expectException(InvalidArgumentException::class);
         $core->boot();

@@ -1,6 +1,6 @@
 # Database connections and module persistence
 
-Persistence is optional. The application boots without `config/database.yaml` until an enabled module declares database mappings or migrations. To enable it, copy `config/database.example.yaml` to `config/database.yaml` and provide the URL environment variables through deployment configuration. The local file and credentials are ignored by Git. Each connection is registered during boot and opened on first use.
+Persistence is optional. The application boots without `config/database.yaml` until an enabled module declares database mappings or migrations. To enable it, copy `config/database.example.yaml` to `config/database.yaml` and provide the URL environment variables through deployment configuration. The local file and credentials are ignored by Git. Workspace overrides in `config/workspaces/{name}/database.yaml` merge before registration. Each connection is registered during boot and opened on first use.
 
 ```yaml
 database:
@@ -19,7 +19,7 @@ database:
       orm: false
 ```
 
-`default` must name a connection. Names use lowercase letters, digits and underscores and start with a letter. `url_env` names an environment variable whose value is a Doctrine connection URL. `params` accepts Doctrine DBAL driver parameters; they may supplement a URL. `orm` defaults to `false`. An optional `migrations_table` changes that connection's migration history table name. Use paths or DSNs appropriate to the deployment; do not commit credentials. For tests, `params: {driver: pdo_sqlite, memory: true}` creates an independent in-memory SQLite connection. Database configuration is validated at boot; the driver opens lazily.
+`default` must name a connection. Names use lowercase letters, digits and underscores and start with a letter. `url_env` names an environment variable whose value is a Doctrine connection URL. Doctrine DBAL driver parameters may be placed directly under a connection or in `params`; nested `params` wins if both specify the same key. They may supplement a URL. `orm` defaults to `false`. An optional `migrations_table` changes that connection's migration history table name. Use paths or DSNs appropriate to the deployment; do not commit credentials. For tests, `params: {driver: pdo_sqlite, memory: true}` creates an independent in-memory SQLite connection. Database configuration is validated at boot; the driver opens lazily.
 
 ## DBAL API
 

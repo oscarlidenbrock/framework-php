@@ -34,6 +34,7 @@ final class DatabaseManager
         private readonly array $mappingPaths,
         private readonly array $migrationDirectories,
         private readonly string $rootPath,
+        private readonly string $workspace = 'default',
     ) {
     }
 
@@ -71,7 +72,7 @@ final class DatabaseManager
         if ($this->entityManager !== null && $this->entityManager->isOpen()) {
             return $this->entityManager;
         }
-        $cache = new FilesystemAdapter('orm_' . $this->name, 0, $this->rootPath . '/storage/cache/doctrine');
+        $cache = new FilesystemAdapter('orm_' . $this->workspace . '_' . $this->name, 0, $this->rootPath . '/storage/cache/doctrine');
         $configuration = ORMSetup::createAttributeMetadataConfig($this->mappingPaths, false, $this->name, $cache);
         $configuration->enableNativeLazyObjects(true);
 

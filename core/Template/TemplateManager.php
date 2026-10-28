@@ -23,6 +23,7 @@ final class TemplateManager
         array $enabledModules,
         bool $cache,
         private readonly AssetManager $assets,
+        string $workspace = 'default',
     ) {
         $loader = new FilesystemLoader();
         foreach ($themes->activeLineage() as $theme) {
@@ -43,7 +44,7 @@ final class TemplateManager
         }
 
         $this->twig = new Environment($loader, [
-            'cache' => $cache ? $rootPath . '/storage/cache/twig' : false,
+            'cache' => $cache ? $rootPath . '/storage/cache/twig/' . $workspace : false,
             'auto_reload' => !$cache,
             'autoescape' => 'html',
             'strict_variables' => true,

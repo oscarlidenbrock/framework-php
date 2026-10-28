@@ -9,6 +9,7 @@ use Framework\Asset\AssetManager;
 use Framework\Asset\LibraryRegistry;
 use Framework\Asset\LibraryResolver;
 use Framework\Config\ConfigManager;
+use Framework\Config\WorkspaceResolver;
 use Framework\Database\DatabaseRegistry;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,6 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Yaml\Yaml;
 
 final class Bootstrap
@@ -35,22 +37,35 @@ final class Bootstrap
     private ?LibraryRegistry $libraries = null;
     private ?AssetManager $assets = null;
     private ?DatabaseRegistry $databases = null;
+    private ?ConfigManager $configuration = null;
+    private ?string $workspace = null;
+    private readonly WorkspaceResolver $workspaceResolver;
     /** @var list<Module> */
     private array $enabledModules = [];
 
     public function __construct(
         private readonly string $rootPath,
         private readonly ?string $configPath = null,
+        private readonly ?string $selectedWorkspace = null,
     ) {
+        $this->workspaceResolver = new WorkspaceResolver($rootPath . '/config');
     }
 
-    public function boot(): void
+    public function boot(?Request $request = null): void
     {
+        if ($this->kernel !== null && $request === null) {
+            return;
+        }
+        $workspace = $this->workspaceResolver->resolve($request, $this->selectedWorkspace);
         if ($this->kernel !== null) {
+            if ($workspace !== $this->workspace) {
+                throw new \InvalidArgumentException('A booted Core cannot serve another workspace.');
+            }
             return;
         }
 
-        $config = (new ConfigManager($this->configPath ?? $this->rootPath . '/config/app.yaml'))->load();
+        $configuration = new ConfigManager($this->rootPath . '/config', $workspace, $this->configPath);
+        $config = $configuration->load();
         $loader = require $this->rootPath . '/vendor/autoload.php';
 
         if (!$loader instanceof ClassLoader) {
@@ -61,7 +76,7 @@ final class Bootstrap
         $modules->discover();
         $modules->registerNamespaces();
         $enabled = $modules->enabled($config['enabled_modules']);
-        $databases = new DatabaseRegistry($this->rootPath, $this->rootPath . '/config/database.yaml', $enabled);
+        $databases = new DatabaseRegistry($this->rootPath, $this->rootPath . '/config/database.yaml', $enabled, $configuration->file('database.yaml'), $workspace);
 
         $themes = new ThemeManager($this->rootPath, $loader, $config['theme_discovery_cache']);
         $themes->discover();
@@ -79,7 +94,7 @@ final class Bootstrap
         $assets = new AssetManager($resolver, $themes->globalLibraries());
         $assets->prepare();
         $assets->reset();
-        $templates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $assets);
+        $templates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $assets, $workspace);
 
         $container = new ContainerBuilder();
         $container->set(TemplateManager::class, $templates);
@@ -132,12 +147,14 @@ final class Bootstrap
         $this->libraries = $libraries;
         $this->assets = $assets;
         $this->databases = $databases;
+        $this->configuration = $configuration;
+        $this->workspace = $workspace;
         $this->kernel = new HttpKernel($routes, $container, $assets, $databases);
     }
 
-    public function kernel(): HttpKernel
+    public function kernel(?Request $request = null): HttpKernel
     {
-        $this->boot();
+        $this->boot($request);
 
         return $this->kernel;
     }
@@ -190,6 +207,20 @@ final class Bootstrap
         $this->boot();
 
         return $this->databases;
+    }
+
+    public function config(): ConfigManager
+    {
+        $this->boot();
+
+        return $this->configuration;
+    }
+
+    public function workspace(): string
+    {
+        $this->boot();
+
+        return $this->workspace;
     }
 
     private function loadRoutes(RouteCollection $routes, string $path): void

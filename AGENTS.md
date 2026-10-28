@@ -344,6 +344,8 @@ Permissions, access-control decisions, security-critical events and module lifec
 
 ## 11. Configuration and environments
 
+The implemented workspace system resolves an exact HTTP hostname from `config/workspaces.yaml` before boot, or requires `APP_WORKSPACE`/`--workspace` for CLI. Workspace names and directories are validated; unknown hosts and mismatches with a fixed deployment workspace fail. A single `ConfigManager` combines global YAML files with the selected `config/workspaces/{name}/` overrides by relative path. Maps merge recursively; lists, scalar values, null and explicit empty arrays replace. `workspaces.yaml` is never overridden. Bootstrap must give the effective configuration to modules, themes, Twig, Doctrine and the container. A booted Core must not serve a different workspace. Keep secrets out of versioned YAML; use `url_env` or untracked deployment configuration. See `docs/workspaces.md` and ADR 0007.
+
 Keep distinct:
 
 1. **Module/theme code defaults:** versioned with the extension.

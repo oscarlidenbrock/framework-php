@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Framework;
 
 use Framework\Bootstrap\Bootstrap;
+use Framework\Config\ConfigManager;
 use Framework\Asset\AssetManager;
 use Framework\Asset\LibraryRegistry;
 use Framework\Database\DatabaseManager;
@@ -20,9 +21,9 @@ class Core
 {
     private readonly Bootstrap $bootstrap;
 
-    public function __construct(string $rootPath, ?string $configPath = null)
+    public function __construct(string $rootPath, ?string $configPath = null, ?string $workspace = null)
     {
-        $this->bootstrap = new Bootstrap($rootPath, $configPath);
+        $this->bootstrap = new Bootstrap($rootPath, $configPath, $workspace);
     }
 
     public function boot(): void
@@ -32,7 +33,7 @@ class Core
 
     public function handle(Request $request): Response
     {
-        return $this->bootstrap->kernel()->handle($request);
+        return $this->bootstrap->kernel($request)->handle($request);
     }
 
     public function modules(): ModuleManager
@@ -76,5 +77,15 @@ class Core
     public function databases(): DatabaseRegistry
     {
         return $this->bootstrap->databases();
+    }
+
+    public function config(): ConfigManager
+    {
+        return $this->bootstrap->config();
+    }
+
+    public function workspace(): string
+    {
+        return $this->bootstrap->workspace();
     }
 }
