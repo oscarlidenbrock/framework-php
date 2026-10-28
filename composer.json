@@ -3,11 +3,26 @@
     "description": "Standalone modular PHP framework and CMS",
     "type": "project",
     "require": {
-        "php": "^8.4"
+        "php": "^8.4",
+        "symfony/dependency-injection": "^7.4",
+        "symfony/http-foundation": "^7.4",
+        "symfony/routing": "^7.4",
+        "symfony/yaml": "^7.4",
+        "symfony/config": "^7.4"
     },
     "autoload": {
         "psr-4": {
             "Framework\\": "core/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0",
+        "phpstan/phpstan": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.0"
+    },
+    "config": {
+        "platform": {
+            "php": "8.4.0"
         }
     }
 }

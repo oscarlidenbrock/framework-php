@@ -1,0 +1,5 @@
+services:
+  example.controller:
+    class: Module\Example\Controller\ExampleController
+    arguments: ['Example module is running']
+    public: true

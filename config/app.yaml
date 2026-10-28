@@ -1,0 +1,3 @@
+enabled_modules:
+  - example
+module_discovery_cache: false

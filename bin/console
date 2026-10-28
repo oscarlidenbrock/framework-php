@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Framework\Core;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$command = $argv[1] ?? 'help';
+if ($command === 'help') {
+    echo "Usage: php bin/console module:list\n";
+    exit(0);
+}
+if ($command !== 'module:list') {
+    fwrite(STDERR, "Unknown command: {$command}\n");
+    exit(2);
+}
+
+try {
+    $core = new Core(dirname(__DIR__));
+    $core->boot();
+    $enabled = array_fill_keys(array_map(static fn ($module): string => $module->id, $core->enabledModules()), true);
+    foreach ($core->modules()->discover() as $module) {
+        echo $module->id . "\t" . (isset($enabled[$module->id]) ? 'enabled' : 'disabled') . "\n";
+    }
+} catch (Throwable $exception) {
+    fwrite(STDERR, $exception->getMessage() . "\n");
+    exit(1);
+}
