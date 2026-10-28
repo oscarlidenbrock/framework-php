@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ title|default('Framework') }}{% endblock %}</title>
+    {% for stylesheet in theme_assets.css %}
+    <link rel="stylesheet" href="{{ stylesheet }}">
+    {% endfor %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+    {% for script in theme_assets.js %}
+    <script src="{{ script }}" defer></script>
+    {% endfor %}
+</body>
+</html>
