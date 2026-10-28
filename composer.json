@@ -1,0 +1,13 @@
+{
+    "name": "framework/framework",
+    "description": "Standalone modular PHP framework and CMS",
+    "type": "project",
+    "require": {
+        "php": "^8.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Framework\\": "core/"
+        }
+    }
+}
