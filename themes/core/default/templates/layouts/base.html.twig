@@ -4,14 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{{ title|default('Framework') }}{% endblock %}</title>
-    {% for stylesheet in theme_assets.css %}
-    <link rel="stylesheet" href="{{ stylesheet }}">
-    {% endfor %}
+
+    {% block stylesheets %}
+        {% for stylesheet in stylesheets %}
+            <link rel="stylesheet" href="{{ stylesheet }}">
+        {% endfor %}
+    {% endblock %}
 </head>
 <body>
     {% block content %}{% endblock %}
-    {% for script in theme_assets.js %}
-    <script src="{{ script }}" defer></script>
-    {% endfor %}
+
+    {% block scripts %}
+        {% for script in scripts %}
+            <script src="{{ script }}" defer></script>
+        {% endfor %}
+    {% endblock %}
 </body>
 </html>
