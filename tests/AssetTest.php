@@ -93,6 +93,26 @@ final class AssetTest extends TestCase
         self::assertSame('', $renderer->render([$font], 'fonts', 'body'));
     }
 
+    public function testExternalCssEscapesUrlAndCanOmitIntegrity(): void
+    {
+        $asset = (new AssetNormalizer())->normalize('https://fonts.googleapis.com/css2?family=Inter&display=swap', ['external' => true, 'referrerpolicy' => 'no-referrer'], 'css', 'test');
+        self::assertTrue($asset->isExternal());
+        self::assertTrue((new AssetNormalizer())->normalize('HTTPS://cdn.example.test/site.css', ['external' => true], 'css', 'test')->isExternal());
+        self::assertSame('https://fonts.googleapis.com/css2?family=Inter&display=swap', $asset->url);
+        $html = (new AssetRenderer())->render([$asset], 'css', 'head');
+        self::assertStringContainsString('href="https://fonts.googleapis.com/css2?family=Inter&amp;display=swap"', $html);
+        self::assertStringContainsString('referrerpolicy="no-referrer"', $html);
+        self::assertStringNotContainsString('integrity=', $html);
+    }
+
+    public function testExternalScriptIntegrityDefaultsToAnonymousCors(): void
+    {
+        $hash = 'sha256-' . base64_encode(str_repeat('a', 32));
+        $asset = (new AssetNormalizer())->normalize('https://cdn.example.test/app.js', ['external' => true, 'integrity' => $hash], 'js', 'test');
+        self::assertSame('anonymous', $asset->attributes['crossorigin']);
+        self::assertStringContainsString('integrity="' . $hash . '"', (new AssetRenderer())->render([$asset], 'js', 'body'));
+    }
+
     public function testRegistryDeduplicatesAndPreservesOrder(): void
     {
         $normalizer = new AssetNormalizer();
@@ -165,5 +185,16 @@ final class AssetTest extends TestCase
         yield 'font type mismatch' => ['fonts', 'fonts/site.woff2', ['type' => 'font/woff']];
         yield 'font unsafe format' => ['fonts', 'fonts/site.svg', []];
         yield 'font event handler' => ['fonts', 'fonts/site.woff2', ['attributes' => ['onload' => 'bad']]];
+        yield 'external without marker' => ['css', 'https://cdn.example.test/site.css', []];
+        yield 'external http' => ['css', 'http://cdn.example.test/site.css', ['external' => true]];
+        yield 'external protocol relative' => ['css', '//cdn.example.test/site.css', ['external' => true]];
+        yield 'external data URL' => ['css', 'data:text/css,body{}', ['external' => true]];
+        yield 'external javascript URL' => ['js', 'javascript:alert(1)', ['external' => true]];
+        yield 'external credentials' => ['js', 'https://user:pass@cdn.example.test/app.js', ['external' => true]];
+        yield 'external fragment' => ['css', 'https://cdn.example.test/site.css#x', ['external' => true]];
+        yield 'external backslash' => ['js', 'https://cdn.example.test/a\\b.js', ['external' => true]];
+        yield 'external event attribute' => ['js', 'https://cdn.example.test/app.js', ['external' => true, 'attributes' => ['onload' => 'alert(1)']]];
+        yield 'external style attribute' => ['css', 'https://cdn.example.test/site.css', ['external' => true, 'attributes' => ['style' => 'color:red']]];
+        yield 'external font unsupported' => ['fonts', 'https://cdn.example.test/font.woff2', ['external' => true]];
     }
 }

@@ -203,7 +203,7 @@ The module loader must not depend on the presence of an HTTP request: CLI comman
 - `TemplateManager::renderResponse($template, ['libraries' => [...]], $variables, $status)` attaches named libraries. `Framework\Asset\AssetManager::attachLibrary()` is injectable into controllers and services for the same purpose. The former `css` and `js` response keys are rejected.
 - `theme.yaml` may list global library IDs under `libraries`. Parent theme libraries attach before child theme libraries; dependencies are resolved in stable topological order and cycles or unavailable libraries fail.
 - Asset definitions are normalized and validated once during library registration. A response-local registry deduplicates files and rejects conflicting attributes. The HTTP kernel resets attachment state on every request, including error paths.
-- Publication commands copy only files declared by registered libraries to ignored files under `public/assets/`. Runtime rendering does not copy files. The complete format and behavior are in `docs/assets.md` and ADR 0005.
+- Publication commands copy only local files declared by registered libraries to ignored files under `public/assets/`. Runtime rendering does not copy files. The complete format and behavior are in `docs/assets.md` and ADRs 0005, 0017 and 0018.
 
 ## 6. Theme system and Twig
 

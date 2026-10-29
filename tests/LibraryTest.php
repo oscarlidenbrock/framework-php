@@ -84,6 +84,56 @@ YAML);
         self::assertSame(['/assets/themes/default/css/site.css', '/assets/modules/example/css/base.css'], array_map(static fn ($asset): string => $asset->url, $assets->assets('css')));
     }
 
+    public function testExternalAndLocalBundleOrderDeduplicationAndPublication(): void
+    {
+        $this->moduleLibraries(<<<'YAML'
+remote_css:
+  css:
+    'https://fonts.googleapis.com/css2?family=Inter&display=swap':
+      external: true
+remote_js:
+  js:
+    'https://cdn.example.test/bootstrap.js':
+      external: true
+local:
+  css: css/base.css
+bundle:
+  dependencies: [example/remote_css, example/remote_js, example/local]
+repeat:
+  dependencies: [example/remote_css]
+YAML);
+        $registry = $this->registry();
+        $assets = new AssetManager(new LibraryResolver($registry), []);
+        $assets->prepare(['example/bundle', 'example/repeat']);
+        self::assertSame([
+            'https://fonts.googleapis.com/css2?family=Inter&display=swap',
+            '/assets/modules/example/css/base.css',
+        ], array_map(static fn ($asset): ?string => $asset->url, $assets->assets('css')));
+        self::assertSame(['https://cdn.example.test/bootstrap.js'], array_map(static fn ($asset): ?string => $asset->url, $assets->assets('js')));
+        mkdir($this->root . '/public');
+        $registry->publish('module');
+        self::assertFileExists($this->root . '/public/assets/modules/example/css/base.css');
+        self::assertFileDoesNotExist($this->root . '/public/assets/modules/example/https:');
+    }
+
+    public function testConflictingExternalDefinitionsFail(): void
+    {
+        $this->moduleLibraries(<<<'YAML'
+first:
+  css:
+    'https://cdn.example.test/site.css':
+      external: true
+second:
+  css:
+    'https://cdn.example.test/site.css':
+      external: true
+      media: print
+YAML);
+        $assets = new AssetManager(new LibraryResolver($this->registry()), []);
+        $this->expectExceptionMessage('Conflicting asset configuration for https://cdn.example.test/site.css');
+        $assets->prepare(['example/first', 'example/second']);
+    }
+
     public function testConflictingDuplicateFileFails(): void
     {
         $this->moduleLibraries("first:\n  js: js/base.js\nsecond:\n  js:\n    js/base.js:\n      async: true\n");
@@ -125,6 +175,32 @@ YAML);
         $registry = new LibraryRegistry($this->root, [], [$this->theme]);
         $this->expectExceptionMessage('Library not found or unavailable: example/base');
         $registry->get('example/base');
+    }
+
+    public function testExternalLibraryRemainsScopedToSelectedTheme(): void
+    {
+        file_put_contents($this->themePath . '/config/libraries.yaml', "remote:
+  css:
+    'https://cdn.example.test/public.css':
+      external: true
+");
+        $adminPath = $this->root . '/themes/core/admin';
+        mkdir($adminPath . '/config', 0775, true);
+        file_put_contents($adminPath . '/config/libraries.yaml', "remote:
+  css:
+    'https://cdn.example.test/admin.css':
+      external: true
+");
+        $admin = new Theme('admin', 'Admin', $adminPath, null, []);
+        $publicRegistry = new LibraryRegistry($this->root, [], [$this->theme]);
+        self::assertSame('https://cdn.example.test/public.css', $publicRegistry->get('default/remote')->assets['css'][0]->url);
+        try {
+            $publicRegistry->get('admin/remote');
+            self::fail('Administration library must not be registered in public rendering.');
+        } catch (InvalidArgumentException) {
+        }
+        $adminRegistry = new LibraryRegistry($this->root, [], [$admin]);
+        self::assertSame('https://cdn.example.test/admin.css', $adminRegistry->get('admin/remote')->assets['css'][0]->url);
     }
 
     public function testThemeGlobalsUseParentThenChildAndRespectDependencies(): void

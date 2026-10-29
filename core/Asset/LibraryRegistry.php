@@ -119,6 +119,10 @@ final class LibraryRegistry
             $resolved = ['css' => [], 'js' => [], 'fonts' => []];
             foreach (['css', 'js', 'fonts'] as $type) {
                 foreach ($assets[$type] as $asset) {
+                    if ($asset->isExternal()) {
+                        $resolved[$type][] = $asset;
+                        continue;
+                    }
                     $file = $ownerPath . '/assets/' . $asset->path;
                     $root = realpath($ownerPath . '/assets');
                     $real = realpath($file);

@@ -16,6 +16,9 @@ final class AssetPublisher
         }
         foreach (['css', 'js', 'fonts'] as $type) {
             foreach ($assets[$type] as $asset) {
+                if ($asset->isExternal()) {
+                    continue;
+                }
                 $source = $sourceRoot . '/' . $asset->path;
                 $realSource = realpath($source);
                 if ($realRoot === false || $realSource === false || !is_file($source) || is_link($source) || !str_starts_with($realSource, $realRoot . DIRECTORY_SEPARATOR)) {

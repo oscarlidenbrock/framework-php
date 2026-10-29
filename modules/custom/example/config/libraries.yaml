@@ -6,3 +6,12 @@ base:
   js:
     js/example.js:
       defer: true
+
+external_fonts:
+  css:
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap':
+      external: true
+      referrerpolicy: no-referrer
+
+complete:
+  dependencies: [example/base, example/external_fonts]

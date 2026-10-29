@@ -43,6 +43,14 @@ final class AssetNormalizer
     /** @param array<string, mixed> $options */
     public function normalize(string $path, array $options, string $type, string $context): AssetDefinition
     {
+        $external = $options['external'] ?? false;
+        if (!is_bool($external) || $external && !in_array($type, ['css', 'js'], true)) {
+            throw new \InvalidArgumentException("Invalid external asset declaration: {$context}");
+        }
+        if ($external) {
+            $this->validateExternalUrl($path, $context);
+            unset($options['external']);
+        }
         $allowed = match ($type) {
             'css' => ['media', 'type', 'position', 'integrity', 'crossorigin', 'referrerpolicy', 'fetchpriority', 'attributes'],
             'js' => ['defer', 'async', 'type', 'position', 'integrity', 'crossorigin', 'referrerpolicy', 'fetchpriority', 'attributes'],
@@ -56,7 +64,7 @@ final class AssetNormalizer
             throw new \InvalidArgumentException("Null asset property: {$context}");
         }
         $extension = $type === 'fonts' ? '(?:woff2?|ttf|otf)' : $type;
-        if (!preg_match('#^' . $type . '/[A-Za-z0-9_./-]+\.' . $extension . '$#', $path) || str_contains($path, '//') || in_array('.', explode('/', $path), true) || in_array('..', explode('/', $path), true)) {
+        if (!$external && (!preg_match('#^' . $type . '/[A-Za-z0-9_./-]+\.' . $extension . '$#', $path) || str_contains($path, '//') || in_array('.', explode('/', $path), true) || in_array('..', explode('/', $path), true))) {
             throw new \InvalidArgumentException("Invalid {$type} asset path: {$context}");
         }
 
@@ -111,6 +119,9 @@ final class AssetNormalizer
             }
             $attributes[$name] = $text;
         }
+        if ($external && isset($options['integrity']) && !isset($options['crossorigin'])) {
+            $attributes['crossorigin'] = 'anonymous';
+        }
         if ($type === 'js') {
             $async = $options['async'] ?? false;
             $defer = $options['defer'] ?? (!$async && ($attributes['type'] ?? null) !== 'module');
@@ -143,7 +154,15 @@ final class AssetNormalizer
         }
         ksort($attributes);
 
-        return new AssetDefinition($type, $path, $position, $attributes);
+        return new AssetDefinition($type, $path, $position, $attributes, $external ? $path : null);
+    }
+
+    private function validateExternalUrl(string $url, string $context): void
+    {
+        $parts = parse_url($url);
+        if ($parts === false || !is_string($parts['scheme'] ?? null) || strtolower($parts['scheme']) !== 'https' || !is_string($parts['host'] ?? null) || $parts['host'] === '' || isset($parts['user']) || isset($parts['pass']) || isset($parts['fragment']) || preg_match('/[\x00-\x20\x7F\\\\]/', $url) || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            throw new \InvalidArgumentException("Invalid external HTTPS asset URL: {$context}");
+        }
     }
 
     private function nonemptyText(mixed $value, string $name, string $context): string

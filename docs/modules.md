@@ -12,7 +12,7 @@ requires: []
 
 IDs are lowercase letters, digits and underscores beginning with a letter; PHP namespace segments begin with an uppercase letter. IDs and namespace segments must be unique. `requires` lists enabled module IDs. Missing or circular enabled dependencies fail boot. Discovery validates metadata without loading module PHP classes; Composer registers module namespaces before service definitions load.
 
-For CSS or JavaScript, define named libraries in `config/libraries.yaml`:
+For CSS, JavaScript or fonts, define named libraries in `config/libraries.yaml`:
 
 ```yaml
 page:
@@ -23,7 +23,7 @@ page:
       defer: true
 ```
 
-The files reside in the module's `assets/` directory. Run `php bin/console module:publish-assets` to copy declared files to `public/assets/modules/{module_id}/`. The copies are ignored by Git. See [assets.md](assets.md) for dependencies, all file properties, validation and publication rules.
+Local files reside in the module's `assets/` directory. CSS and JS libraries may also declare marked HTTPS URLs. Run `php bin/console module:publish-assets` to copy declared local files to `public/assets/modules/{module_id}/`. The copies are ignored by Git. See [assets.md](assets.md) for dependencies, all file properties, validation and publication rules.
 
 `config/services.yaml` uses Symfony DependencyInjection's YAML format. Controllers must be public services:
 
