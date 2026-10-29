@@ -95,7 +95,10 @@ final class DatabaseRegistry
             $autoMigrations = $module->path . '/migrations';
             $hasExplicitMigrations = false;
             foreach ($explicitMigrations as $connection => $groups) {
-                $this->requireConnection($definitions, $connection, $module->id);
+                if ($connection !== '*') {
+                    $this->requireConnection($definitions, $connection, $module->id);
+                }
+                $targets = $connection === '*' ? array_keys($definitions) : [$connection];
                 if (!is_array($groups) || $groups === [] || array_is_list($groups)) {
                     throw new \InvalidArgumentException("Invalid migration groups for module {$module->id}");
                 }
@@ -107,20 +110,22 @@ final class DatabaseRegistry
                     if ($real === realpath($autoMigrations)) {
                         $hasExplicitMigrations = true;
                     }
-                    if (isset($migrationPaths[$real]) || isset($migrations[$connection][$namespace])) {
-                        throw new \InvalidArgumentException("Duplicate migration directory or namespace for module {$module->id}");
+                    foreach ($targets as $target) {
+                        if (isset($migrationPaths[$target][$real]) || isset($migrations[$target][$namespace])) {
+                            throw new \InvalidArgumentException("Duplicate migration directory or namespace for module {$module->id}");
+                        }
+                        $migrationPaths[$target][$real] = true;
+                        $migrations[$target][$namespace] = $real;
                     }
-                    $migrationPaths[$real] = true;
-                    $migrations[$connection][$namespace] = $real;
                 }
             }
             if (is_dir($autoMigrations) && !$hasExplicitMigrations) {
                 $real = realpath($autoMigrations);
                 $namespace = 'Module\\' . $module->namespace . '\\Migrations';
-                if (isset($migrationPaths[$real]) || isset($migrations[$preferred][$namespace])) {
+                if (isset($migrationPaths[$preferred][$real]) || isset($migrations[$preferred][$namespace])) {
                     throw new \InvalidArgumentException("Duplicate migration directory for module {$module->id}");
                 }
-                $migrationPaths[$real] = true;
+                $migrationPaths[$preferred][$real] = true;
                 $migrations[$preferred][$namespace] = $real;
             }
         }

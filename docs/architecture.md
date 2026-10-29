@@ -16,6 +16,7 @@
 | Module lifecycle commands and permissions | Planned |
 | Optional named DBAL connections, per-connection ORM and module migrations | Implemented |
 | Host-selected workspaces and recursive YAML configuration overrides | Implemented |
+| Dynamic scalar content types, system fields and DBAL CRUD | Implemented; admin UI and advanced fields planned |
 | Per-file asset HTML attributes and script placement | Implemented |
 | Theme regions, block placement and asset build pipeline | Planned |
 | Configurable content | Planned |

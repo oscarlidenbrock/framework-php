@@ -3,6 +3,8 @@ parameters:
     paths:
         - core
         - modules/custom/example/src
+        - modules/core/content/src
+        - modules/core/content/migrations
         - tests
         - public
         - bin/console

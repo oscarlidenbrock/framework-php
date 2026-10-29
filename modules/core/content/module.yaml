@@ -1,0 +1,9 @@
+id: content
+name: Content
+namespace: Content
+version: 0.1.0
+requires: []
+database:
+  migrations:
+    '*':
+      Module\Content\Migrations: migrations

@@ -30,6 +30,8 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 Persistence is optional. To configure it, copy `config/database.example.yaml` to ignored `config/database.yaml` and set the named environment variables outside the repository. See [docs/database.md](docs/database.md) for DBAL and ORM APIs, module mappings, and per-connection migration commands.
 
+The optional `content` module adds dynamic scalar content types. Enable it in `enabled_modules` after configuring a database, apply its migration, then create types and synchronize field changes explicitly. See [docs/content.md](docs/content.md) for the Article example, CLI commands, storage API and current limits.
+
 `module_discovery_cache` and `theme_discovery_cache` store validated discovery data in `storage/cache/`. `twig_cache: true` stores compiled Twig templates there. Use these settings in production; remove the corresponding cache directories after deployments that preserve timestamps or change templates while auto reload is disabled.
 
 ```sh

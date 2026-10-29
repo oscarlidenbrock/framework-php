@@ -50,4 +50,6 @@ For HTML, inject `Framework\Template\TemplateManager` and call `renderResponse('
 
 Enable `hello` by adding it to `enabled_modules` in `config/app.yaml`; inspect with `php bin/console module:list`. Removing the ID disables its routes, services and libraries without deleting code or data. The [example module](../modules/custom/example/) is a working reference.
 
+Field types can be registered by enabled modules as services tagged `framework.field_type`. They implement `Framework\Field\FieldTypeInterface` and are available to the content module before content types are used. See [content.md](content.md).
+
 For attribute-mapped entities and Doctrine migrations, a module may use `src/Entity/` and `migrations/`, assigned to its configured EntityManager or the default connection. Declare additional mappings and migration groups in `module.yaml`. See [database.md](database.md) for the manifest format, named service IDs and migration commands.

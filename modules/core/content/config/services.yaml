@@ -1,0 +1,9 @@
+services:
+  content.types:
+    class: Module\Content\ContentType\ContentTypeManager
+    arguments: ['@Framework\Database\DatabaseRegistry', '@Framework\Field\FieldTypeRegistry', '@Framework\Entity\EntityTypeRegistry', '@Framework\Config\ConfigManager']
+    public: true
+  content.storage:
+    class: Module\Content\Storage\ContentStorage
+    arguments: ['@content.types', '@Framework\Field\FieldTypeRegistry']
+    public: true

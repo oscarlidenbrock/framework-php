@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 use Framework\Core;
+use Module\Content\ContentType\ContentTypeManager;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -12,6 +13,8 @@ $command = null;
 $workspace = null;
 $connectionName = null;
 $confirmed = false;
+$positionals = [];
+$fieldOptions = [];
 foreach (array_slice($arguments, 1) as $argument) {
     if (str_starts_with($argument, '--workspace=') && $workspace === null) {
         $workspace = substr($argument, strlen('--workspace='));
@@ -21,6 +24,10 @@ foreach (array_slice($arguments, 1) as $argument) {
         $connectionName = substr($argument, strlen('--connection='));
     } elseif ($argument === '--yes' && !$confirmed) {
         $confirmed = true;
+    } elseif (preg_match('/^--(length|precision|scale)=([0-9]+)$/', $argument, $matches) && !isset($fieldOptions[$matches[1]])) {
+        $fieldOptions[$matches[1]] = (int) $matches[2];
+    } elseif ($command !== null && !str_starts_with($argument, '--')) {
+        $positionals[] = $argument;
     } else {
         fwrite(STDERR, "Unknown or duplicate option: {$argument}\n");
         exit(2);
@@ -28,14 +35,14 @@ foreach (array_slice($arguments, 1) as $argument) {
 }
 $command ??= 'help';
 if ($command === 'help') {
-    echo "Usage: php bin/console [--workspace=name] module:list|module:publish-assets|theme:list|theme:publish-assets|database:status|database:validate|database:migrate [--connection=name] [--yes]\n";
+    echo "Usage: php bin/console [--workspace=name] module:list|theme:list|database:status|database:migrate|content:type:list|content:type:create|content:field:list|content:field:add|content:field:update|content:schema:status|content:schema:diff|content:schema:apply [arguments] [--connection=name] [--yes]\n";
     exit(0);
 }
-if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate'], true)) {
+if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate', 'content:type:list', 'content:type:create', 'content:field:list', 'content:field:add', 'content:field:update', 'content:schema:status', 'content:schema:diff', 'content:schema:apply'], true)) {
     fwrite(STDERR, "Unknown command: {$command}\n");
     exit(2);
 }
-if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') || $confirmed && $command !== 'database:migrate') {
+if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') && !str_starts_with($command, 'content:') || $confirmed && !in_array($command, ['database:migrate', 'content:schema:apply'], true) || $fieldOptions !== [] && !in_array($command, ['content:field:add', 'content:field:update'], true) || $positionals !== [] && !str_starts_with($command, 'content:')) {
     fwrite(STDERR, "Invalid command option.\n");
     exit(2);
 }
@@ -74,6 +81,56 @@ try {
         $database->connection()->getNativeConnection();
         $core->databases()->validateMappings();
         echo $database->name . "\tvalid\n";
+    } elseif (str_starts_with($command, 'content:')) {
+        $types = $core->container()->get('content.types');
+        if (!$types instanceof ContentTypeManager) {
+            throw new LogicException('Content module is not enabled.');
+        }
+        $expected = match ($command) {
+            'content:type:list' => 0,
+            'content:type:create' => 2,
+            'content:field:list', 'content:schema:status', 'content:schema:diff', 'content:schema:apply' => 1,
+            'content:field:add' => 3,
+            'content:field:update' => 2,
+        };
+        if (count($positionals) !== $expected) {
+            throw new InvalidArgumentException("{$command} expects {$expected} argument(s).");
+        }
+        if ($command === 'content:type:list') {
+            foreach ($types->all($connectionName) as $type) {
+                echo $type->namespace . "\t" . $type->label . "\t" . $type->schemaStatus . "\n";
+            }
+        } elseif ($command === 'content:type:create') {
+            $type = $types->create($positionals[0], $positionals[1], connection: $connectionName);
+            echo $type->namespace . "\tcreated\n";
+        } elseif ($command === 'content:field:list') {
+            foreach ($types->fields($positionals[0], $connectionName) as $field) {
+                echo $field->name . "\t" . $field->type . "\t" . ($field->system ? 'system' : 'custom') . "\n";
+            }
+        } elseif ($command === 'content:field:add') {
+            $settings = $fieldOptions;
+            $types->addField($positionals[0], ['name' => $positionals[1], 'type' => $positionals[2], 'settings' => $settings], $connectionName);
+            echo $positionals[1] . "\tpending\n";
+        } elseif ($command === 'content:field:update') {
+            if ($fieldOptions === []) {
+                throw new InvalidArgumentException('Field update needs a setting option.');
+            }
+            $types->updateField($positionals[0], $positionals[1], ['settings' => $fieldOptions], $connectionName);
+            echo $positionals[1] . "\tpending\n";
+        } else {
+            $schema = $types->schema($positionals[0], $connectionName);
+            $changes = $schema->diff();
+            if ($command === 'content:schema:apply') {
+                $schema->apply($confirmed);
+                echo $positionals[0] . "\tapplied\n";
+            } elseif ($command === 'content:schema:status') {
+                echo $positionals[0] . "\t" . ($changes === [] ? 'applied' : 'pending') . "\n";
+            } else {
+                foreach ($changes as $change) {
+                    echo $change['kind'] . "\t" . $change['name'] . "\t" . ($change['destructive'] ? 'destructive' : 'safe') . "\n";
+                }
+            }
+        }
     } else {
         $database = $core->database($connectionName);
         echo $database->name . "\t" . $database->migrate() . " migrations applied\n";

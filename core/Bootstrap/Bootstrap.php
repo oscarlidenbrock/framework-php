@@ -11,6 +11,8 @@ use Framework\Asset\LibraryResolver;
 use Framework\Config\ConfigManager;
 use Framework\Config\WorkspaceResolver;
 use Framework\Database\DatabaseRegistry;
+use Framework\Entity\EntityTypeRegistry;
+use Framework\Field\FieldTypeRegistry;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Framework\Http\HttpKernel;
@@ -20,6 +22,7 @@ use Framework\Template\TemplateManager;
 use Framework\Theme\ThemeManager;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -38,6 +41,7 @@ final class Bootstrap
     private ?AssetManager $assets = null;
     private ?DatabaseRegistry $databases = null;
     private ?ConfigManager $configuration = null;
+    private ?ContainerBuilder $container = null;
     private ?string $workspace = null;
     private readonly WorkspaceResolver $workspaceResolver;
     /** @var list<Module> */
@@ -97,6 +101,11 @@ final class Bootstrap
         $templates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $assets, $workspace);
 
         $container = new ContainerBuilder();
+        $container->set(ConfigManager::class, $configuration);
+        $container->set(EntityTypeRegistry::class, new EntityTypeRegistry());
+        $fieldTypes = new Definition(FieldTypeRegistry::class);
+        $fieldTypes->setPublic(true);
+        $container->setDefinition(FieldTypeRegistry::class, $fieldTypes);
         $container->set(TemplateManager::class, $templates);
         $container->set(AssetManager::class, $assets);
         $container->set(DatabaseRegistry::class, $databases);
@@ -134,6 +143,10 @@ final class Bootstrap
             }
         }
 
+        foreach (array_keys($container->findTaggedServiceIds('framework.field_type')) as $id) {
+            $fieldTypes->addMethodCall('register', [new Reference($id)]);
+        }
+
         $container->compile();
         foreach ($routes as $route) {
             if (!$container->has($route->getDefault('_controller'))) {
@@ -148,6 +161,7 @@ final class Bootstrap
         $this->assets = $assets;
         $this->databases = $databases;
         $this->configuration = $configuration;
+        $this->container = $container;
         $this->workspace = $workspace;
         $this->kernel = new HttpKernel($routes, $container, $assets, $databases);
     }
@@ -221,6 +235,13 @@ final class Bootstrap
         $this->boot();
 
         return $this->workspace;
+    }
+
+    public function container(): ContainerInterface
+    {
+        $this->boot();
+
+        return $this->container;
     }
 
     private function loadRoutes(RouteCollection $routes, string $path): void

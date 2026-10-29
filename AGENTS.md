@@ -275,6 +275,8 @@ Design extension points for token-based alias patterns (such as `/blog/{content:
 
 ## 8. Entities, content types and fields
 
+Every Content Type must include the mandatory system fields `title`, `created_at`, `updated_at`, `published` and `owner`. These fields are protected and automatically managed through the Field API and Content Storage. Dynamic scalar content uses `content_types`, `content_{namespace}_fields` and `content_{namespace}_data` on its selected DatabaseManager connection. The `content` core module owns dynamic definitions, schema synchronization and CRUD; reusable Entity and Field contracts belong in core. Field definitions are the desired schema, while DBAL introspection describes the physical schema. Apply changes explicitly, never silently drop columns or truncate content, and do not generate ORM mappings for dynamic content. Modules register custom field types through tagged services. See `docs/content.md` and ADR 0008.
+
 Keep these concepts explicit:
 
 - **Entity type:** definition of a class/category of entity (for example, User, Content, TaxonomyTerm).

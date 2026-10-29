@@ -67,6 +67,8 @@ database:
 
 The conventional `migrations/` directory uses `Module\Billing\Migrations` and the preferred connection. The explicit groups are for additional directories; paths must exist within the module. Entity mappings cannot overlap or appear in multiple EntityManagers. Cross-connection ORM associations are rejected by `database:validate`; use scalar IDs and application services instead. Modules may define their own repositories without a required base entity class. Metadata caches use separate namespaces per connection under `storage/cache/doctrine/`. The HTTP kernel clears initialized EntityManager identity maps after each request; CLI commands retain theirs for the command lifetime.
 
+An explicit migration group may use `'*'` as its connection key to register the same migration namespace on every configured connection. The `content` core module uses this for its independent `content_types` table. Each connection still tracks execution in its own migration history; run `database:migrate --connection=name --yes` separately for every connection that will store content.
+
 Inject `Doctrine\DBAL\Connection` or `Doctrine\ORM\EntityManagerInterface` for the default connection. For named connections, reference `database.legacy.connection` or `database.legacy.entity_manager` in a module's `config/services.yaml`. `database.legacy` is its `DatabaseManager` service. Only ORM-enabled connections have an EntityManager service. For example:
 
 ```yaml

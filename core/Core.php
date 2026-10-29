@@ -16,6 +16,7 @@ use Framework\Template\TemplateManager;
 use Framework\Theme\ThemeManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Core
 {
@@ -87,5 +88,10 @@ class Core
     public function workspace(): string
     {
         return $this->bootstrap->workspace();
+    }
+
+    public function container(): ContainerInterface
+    {
+        return $this->bootstrap->container();
     }
 }
