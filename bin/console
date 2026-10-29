@@ -4,8 +4,11 @@
 declare(strict_types=1);
 
 use Framework\Core;
+use Framework\Config\InstallationSnapshot;
+use Framework\Config\WorkspaceResolver;
 use Module\Content\ContentType\ContentTypeManager;
 use Module\User\AccountManager;
+use Module\Site\InstallationManager;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -36,26 +39,59 @@ foreach (array_slice($arguments, 1) as $argument) {
 }
 $command ??= 'help';
 if ($command === 'help') {
-    echo "Usage: php bin/console [--workspace=name] module:list|theme:list|database:status|database:migrate|content:type:list|content:type:create|content:field:list|content:field:add|content:field:update|content:schema:status|content:schema:diff|content:schema:apply|user:create-admin [arguments] [--connection=name] [--yes]\n";
+    echo "Usage: php bin/console [--workspace=name] module:list|module:enable|module:disable|module:migrate|theme:list|theme:select|installation:refresh|installation:recover|installation:reset|database:status|database:migrate|content:type:list|content:type:create|content:field:list|content:field:add|content:field:update|content:schema:status|content:schema:diff|content:schema:apply|user:create-admin [arguments] [--connection=name] [--yes]\n";
     exit(0);
 }
-if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate', 'content:type:list', 'content:type:create', 'content:field:list', 'content:field:add', 'content:field:update', 'content:schema:status', 'content:schema:diff', 'content:schema:apply', 'user:create-admin'], true)) {
+if (!in_array($command, ['module:list', 'module:enable', 'module:disable', 'module:migrate', 'module:publish-assets', 'theme:list', 'theme:select', 'theme:publish-assets', 'installation:refresh', 'installation:recover', 'installation:reset', 'database:status', 'database:validate', 'database:migrate', 'content:type:list', 'content:type:create', 'content:field:list', 'content:field:add', 'content:field:update', 'content:schema:status', 'content:schema:diff', 'content:schema:apply', 'user:create-admin'], true)) {
     fwrite(STDERR, "Unknown command: {$command}\n");
     exit(2);
 }
-if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') && !str_starts_with($command, 'content:') || $confirmed && !in_array($command, ['database:migrate', 'content:schema:apply'], true) || $fieldOptions !== [] && !in_array($command, ['content:field:add', 'content:field:update'], true) || $positionals !== [] && !str_starts_with($command, 'content:') && $command !== 'user:create-admin') {
+if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') && !str_starts_with($command, 'content:') || $confirmed && !in_array($command, ['database:migrate', 'content:schema:apply', 'module:migrate', 'installation:reset'], true) || $fieldOptions !== [] && !in_array($command, ['content:field:add', 'content:field:update'], true) || $positionals !== [] && !str_starts_with($command, 'content:') && !in_array($command, ['user:create-admin', 'module:enable', 'module:disable', 'module:migrate', 'theme:select'], true)) {
     fwrite(STDERR, "Invalid command option.\n");
     exit(2);
 }
-if ($command === 'database:migrate' && !$confirmed) {
+if (in_array($command, ['database:migrate', 'module:migrate'], true) && !$confirmed) {
     fwrite(STDERR, "Schema changes require --yes\n");
     exit(2);
 }
 
 try {
+    if ($command === 'installation:recover') {
+        (new InstallationSnapshot(dirname(__DIR__), (new WorkspaceResolver(dirname(__DIR__) . '/config'))->resolve(null, $workspace)))->remove();
+        echo "Bootstrap snapshot removed; YAML selection will be used until a new selection is saved or refreshed.\n";
+        exit(0);
+    }
     $core = new Core(dirname(__DIR__), workspace: $workspace);
     $core->boot();
-    if ($command === 'module:list') {
+    if (in_array($command, ['module:enable', 'module:disable', 'module:migrate', 'theme:select', 'installation:refresh', 'installation:reset'], true)) {
+        $installation = $core->container()->get('site.installation');
+        if (!$installation instanceof InstallationManager) {
+            throw new LogicException('The site module is required for installation management.');
+        }
+        $expected = $command === 'theme:select' ? 2 : (str_starts_with($command, 'module:') ? 1 : 0);
+        if (count($positionals) !== $expected) {
+            throw new InvalidArgumentException("{$command} expects {$expected} argument(s).");
+        }
+        if ($command === 'module:enable') {
+            $installation->enable($positionals[0]);
+        } elseif ($command === 'module:disable') {
+            $installation->disable($positionals[0]);
+        } elseif ($command === 'module:migrate') {
+            echo $installation->migrateFor($positionals[0]) . " migrations applied\n";
+        } elseif ($command === 'theme:select') {
+            $installation->selectTheme($positionals[0], $positionals[1]);
+        } elseif ($command === 'installation:reset') {
+            if (!$confirmed) {
+                throw new InvalidArgumentException('installation:reset requires --yes.');
+            }
+            $installation->resetToSeed();
+        } else {
+            $installation->refresh();
+        }
+        if ($command !== 'module:migrate') {
+            echo "Installation selection updated for the next bootstrap.\n";
+        }
+    } elseif ($command === 'module:list') {
         $enabled = array_fill_keys(array_map(static fn ($module): string => $module->id, $core->enabledModules()), true);
         foreach ($core->modules()->discover() as $module) {
             echo $module->id . "\t" . (isset($enabled[$module->id]) ? 'enabled' : 'disabled') . "\n";

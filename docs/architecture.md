@@ -6,7 +6,7 @@
 | --- | --- |
 | Core facade and HTTP entry point | Implemented |
 | Module discovery, namespace registration and dependency ordering | Implemented |
-| Configuration-based module activation | Implemented |
+| Workspace-scoped database-owned module/theme selection with bootstrap snapshot | Implemented in the `site` module |
 | Module services and public routes | Implemented |
 | Optional module discovery cache | Implemented |
 | Theme discovery, inheritance and separate public/admin rendering | Implemented |
@@ -27,3 +27,5 @@ The kernel does not depend on the example module. Its services, routes and Twig 
 `DatabaseRegistry` reads optional `config/database.yaml`, owns lazy `DatabaseManager` instances and assigns enabled module mappings and migrations to named connections. Each manager owns its DBAL connection, optional ORM EntityManager and Doctrine Migrations history. The HTTP kernel clears initialized EntityManagers after each request. See [database.md](database.md) and [decision 0006](decisions/0006-multi-database-doctrine.md).
 
 `WorkspaceResolver` selects a workspace before boot. One `ConfigManager` merges global YAML with the selected workspace's overrides; Bootstrap passes those effective values to modules, themes, Twig and Doctrine. See [workspaces.md](workspaces.md) and [decision 0007](decisions/0007-workspace-configuration.md).
+
+`InstallationSnapshot` gives Bootstrap the database-owned module and theme selection without an early connection. The `site` module validates changes and persists three workspace-scoped rows before atomically replacing the snapshot. New installations use YAML seed values; CLI recovery can restore that seed when a selection prevents administration. See [installation-selection.md](installation-selection.md) and [decision 0015](decisions/0015-persisted-installation-selection.md).

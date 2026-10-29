@@ -49,7 +49,7 @@ Optional `requirements` constrain path parameters. Every route requires `access:
 
 For HTML, inject `Framework\Template\TemplateManager` and call `renderResponse('@hello/index.html.twig', ['libraries' => ['hello/page']], ['title' => 'Hello'])`. The second argument attaches library IDs, the third supplies Twig variables, and an optional fourth sets status. Controllers or services may also inject `Framework\Asset\AssetManager` and call `attachLibrary()` before rendering. Direct CSS/JS lists are rejected.
 
-Enable `hello` by adding it to `enabled_modules` in `config/app.yaml`; inspect with `php bin/console module:list`. Removing the ID disables its routes, services and libraries without deleting code or data. The [example module](../modules/custom/example/) is a working reference.
+`enabled_modules` in workspace YAML seeds a new installation. After the site migration, an administrator can enable and disable discovered modules at `/admin/modules`, or an operator can use `module:enable` and `module:disable`. The persisted workspace selection takes effect on the next bootstrap. Dependencies must already be enabled; disabling a required module is rejected. Before enabling a module with migrations, run `module:migrate hello --yes`, then publish its assets explicitly with `module:publish-assets`. Disabling never deletes its data. See [installation-selection.md](installation-selection.md). The [example module](../modules/custom/example/) is a working reference.
 
 Field types can be registered by enabled modules as services tagged `framework.field_type`. They implement `Framework\Field\FieldTypeInterface` and are available to the content module before content types are used. See [content.md](content.md).
 

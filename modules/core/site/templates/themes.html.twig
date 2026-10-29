@@ -1,0 +1,21 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p class="admin-eyebrow">Appearance</p>
+<h1>Themes</h1>
+<p class="admin-lead">Choose public and administration themes independently. Changes apply on the next request.</p>
+{% if notice %}<p class="admin-notice" role="status">{{ notice }}</p>{% endif %}
+{% if error %}<p class="admin-error" role="alert">{{ error }}</p>{% endif %}
+<div class="admin-card">
+    {% for kind, selected in {'public': selection.active_theme, 'admin': selection.admin_theme} %}
+    <form method="post" action="{{ action }}" class="content-field">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <label for="theme-{{ kind }}">{{ kind == 'public' ? 'Public theme' : 'Administration theme' }}</label>
+        <select id="theme-{{ kind }}" name="id"{% if not can_edit %} disabled{% endif %}>
+            {% for id in themes %}<option value="{{ id }}"{% if id == selected %} selected{% endif %}>{{ id }}</option>{% endfor %}
+        </select>
+        {% if can_edit %}<button type="submit">Save {{ kind }} theme</button>{% endif %}
+    </form>
+    {% endfor %}
+</div>
+{% endblock %}

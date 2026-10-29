@@ -24,7 +24,7 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 ## Configuration and checks
 
-`config/app.yaml` lists enabled module IDs and selects `active_theme` and `admin_theme`. The example module is enabled by default. Set `active_theme: contrast` to see the child theme override its page; set it back to `default` to use the module template. Disabling the module leaves it discoverable but makes `/example` return 404.
+`config/app.yaml` seeds enabled modules and public/admin themes on a new installation. Later choices made in `/admin/modules` and `/admin/themes` are persisted per workspace and apply at the next bootstrap. The example module is enabled by default. Disabling it leaves it discoverable but makes `/example` return 404.
 
 `config/workspaces.yaml` maps HTTP hostnames to workspace directories. The included `development` workspace accepts `framework.dev`. CLI commands require `APP_WORKSPACE` or `--workspace`. See [docs/workspaces.md](docs/workspaces.md) before adding deployment hostnames or overrides.
 
@@ -35,6 +35,8 @@ The optional `content` module adds dynamic scalar content types. Enable it in `e
 The optional `user` and `admin` modules add login, registration (disabled by default), an explicit first administrator command, and a protected `/admin` dashboard. See [docs/security.md](docs/security.md) before enabling them.
 
 The `site` core module provides General settings at `/admin/settings`. After its explicit migration, authorized editors can override the site title and email per workspace or restore their YAML defaults. The public example page shows the effective title. See [docs/site-settings.md](docs/site-settings.md).
+
+The same module provides `/admin/modules` and `/admin/themes` to manage the workspace's installed extension selection. Migrations and asset publication remain explicit CLI operations. See [docs/installation-selection.md](docs/installation-selection.md) for prerequisites and recovery commands.
 
 `module_discovery_cache` and `theme_discovery_cache` store validated discovery data in `storage/cache/`. `twig_cache: true` stores compiled Twig templates there. Use these settings in production; remove the corresponding cache directories after deployments that preserve timestamps or change templates while auto reload is disabled.
 

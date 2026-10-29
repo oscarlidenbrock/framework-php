@@ -1,0 +1,34 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p class="admin-eyebrow">Extend</p>
+<h1>Modules</h1>
+<p class="admin-lead">Enable installed features after running their migrations and publishing their assets from the console.</p>
+{% if notice %}<p class="admin-notice" role="status">{{ notice }}</p>{% endif %}
+{% if error %}<p class="admin-error" role="alert">{{ error }}</p>{% endif %}
+<div class="admin-card">
+    <div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead><tr><th scope="col">Module</th><th scope="col">Status</th><th scope="col">Requires</th><th scope="col">Action</th></tr></thead>
+        <tbody>
+        {% for id, module in modules %}
+            <tr>
+                <th scope="row">{{ id }}</th>
+                <td>{{ module.enabled ? 'Enabled' : 'Disabled' }}</td>
+                <td>{{ module.requires is empty ? 'None' : module.requires|join(', ') }}</td>
+                <td>
+                {% if can_edit %}
+                    <form method="post" action="{{ action }}">
+                        <input type="hidden" name="_csrf" value="{{ csrf }}">
+                        <input type="hidden" name="id" value="{{ id }}">
+                        <input type="hidden" name="action" value="{{ module.enabled ? 'disable' : 'enable' }}">
+                        <button type="submit">{{ module.enabled ? 'Disable' : 'Enable' }} {{ id }}</button>
+                    </form>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

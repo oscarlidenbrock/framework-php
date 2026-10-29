@@ -1,5 +1,7 @@
 # ADR 0014: Workspace-scoped site setting overrides
 
+Status: accepted for title/email; installation selection superseded by ADR 0015
+
 ## Context
 
 Workspace YAML must resolve connection definitions, enabled modules and themes before any database access. Editors need to change the site title and contact email without editing deployment files. Two workspaces may share one relational connection.
@@ -13,3 +15,5 @@ Only `title` and `email` are accepted in this slice. The module validates both b
 ## Consequences
 
 Shared databases keep workspaces isolated, and the same workspace can choose a different connection through YAML. Reads remain usable during initial installation without a database, while database failures after installation are not silently hidden. The table needs an explicit migration on the selected connection. Existing bootstrap and CLI help paths do not depend on it.
+
+ADR 0015 later adds installation selection keys to this same table and a database-derived bootstrap snapshot. The title and email precedence in this record is unchanged.

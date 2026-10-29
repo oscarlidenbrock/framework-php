@@ -8,3 +8,23 @@ site.settings.edit:
   methods: [POST]
   controller: site.settings_controller
   access: permission:site.settings.edit
+site.extensions.modules:
+  path: /admin/modules
+  methods: [GET]
+  controller: site.extensions_controller
+  access: permission:site.extensions.view
+site.extensions.modules.update:
+  path: /admin/modules
+  methods: [POST]
+  controller: site.extensions_controller
+  access: permission:site.extensions.edit
+site.extensions.themes:
+  path: /admin/themes
+  methods: [GET]
+  controller: site.extensions_controller
+  access: permission:site.themes.view
+site.extensions.themes.update:
+  path: /admin/themes
+  methods: [POST]
+  controller: site.extensions_controller
+  access: permission:site.themes.edit

@@ -2,3 +2,11 @@ settings:
   label: Settings
   route: site.settings.view
   permission: site.settings.view
+modules:
+  label: Modules
+  route: site.extensions.modules
+  permission: site.extensions.view
+themes:
+  label: Themes
+  route: site.extensions.themes
+  permission: site.themes.view

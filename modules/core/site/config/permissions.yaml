@@ -1,2 +1,6 @@
 site.settings.view: View general site settings
 site.settings.edit: Edit general site settings
+site.extensions.view: View installed modules
+site.extensions.edit: Enable and disable modules
+site.themes.view: View available themes
+site.themes.edit: Select public and administration themes

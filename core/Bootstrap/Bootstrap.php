@@ -9,6 +9,7 @@ use Framework\Asset\AssetManager;
 use Framework\Asset\LibraryRegistry;
 use Framework\Asset\LibraryResolver;
 use Framework\Config\ConfigManager;
+use Framework\Config\InstallationSnapshot;
 use Framework\Config\WorkspaceResolver;
 use Framework\Database\DatabaseRegistry;
 use Framework\Entity\EntityTypeRegistry;
@@ -76,6 +77,10 @@ final class Bootstrap
         }
 
         $configuration = new ConfigManager($this->rootPath . '/config', $workspace, $this->configPath);
+        $selection = (new InstallationSnapshot($this->rootPath, $workspace))->read();
+        if ($selection !== null) {
+            $configuration->applyInstallationSelection($selection);
+        }
         $config = $configuration->load();
         $loader = require $this->rootPath . '/vendor/autoload.php';
 
@@ -112,6 +117,12 @@ final class Bootstrap
 
         $container = new ContainerBuilder();
         $container->setParameter('framework.workspace', $workspace);
+        $container->setParameter('framework.root_path', $this->rootPath);
+        $container->setParameter('framework.installation_selection', [
+            'enabled_modules' => $config['enabled_modules'],
+            'active_theme' => $config['active_theme'],
+            'admin_theme' => $config['admin_theme'],
+        ]);
         $container->setParameter('framework.enabled_module_paths', array_column(array_map(static fn (Module $module): array => ['id' => $module->id, 'path' => $module->path], $enabled), 'path', 'id'));
         $container->set(ConfigManager::class, $configuration);
         $container->set(PermissionRegistry::class, $permissions);
@@ -129,6 +140,8 @@ final class Bootstrap
         $container->set('admin.templates', $adminTemplates);
         $container->set(AssetManager::class, $assets);
         $container->set(DatabaseRegistry::class, $databases);
+        $container->set(ModuleManager::class, $modules);
+        $container->set(ThemeManager::class, $themes);
         foreach ($databases->all() as $name => $manager) {
             $managerId = 'database.' . $name;
             $container->set($managerId, $manager);

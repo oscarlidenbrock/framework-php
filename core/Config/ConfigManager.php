@@ -41,6 +41,17 @@ final class ConfigManager
         return $value;
     }
 
+    /** @param array{enabled_modules: list<string>, active_theme: string, admin_theme: string} $selection */
+    public function applyInstallationSelection(array $selection): void
+    {
+        InstallationSnapshot::validate($selection);
+        $this->discover();
+        $this->files['app.yaml'] = array_replace($this->files['app.yaml'] ?? [], $selection);
+        if (isset($this->files['modules.yaml'])) {
+            $this->files['modules.yaml']['enabled_modules'] = $selection['enabled_modules'];
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public function file(string $name): ?array
     {
