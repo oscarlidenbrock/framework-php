@@ -1,0 +1,10 @@
+block.placements:
+  path: /admin/appearance/blocks
+  methods: [GET]
+  controller: block.controller
+  access: permission:block.placements.view
+block.placements.update:
+  path: /admin/appearance/blocks
+  methods: [POST]
+  controller: block.controller
+  access: permission:block.placements.edit

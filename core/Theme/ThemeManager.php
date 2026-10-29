@@ -64,7 +64,8 @@ final class ThemeManager
                     throw new \InvalidArgumentException("Direct theme assets are forbidden; use config/libraries.yaml: {$manifest}");
                 }
                 $libraries = $data['libraries'] ?? [];
-                if (!is_string($id) || !preg_match('/^[a-z][a-z0-9_]*$/', $id) || !is_string($name) || trim($name) === '' || !is_string($namespace) || !preg_match('/^[A-Z][A-Za-z0-9]*$/', $namespace) || !is_string($version) || trim($version) === '' || $parent !== null && (!is_string($parent) || !preg_match('/^[a-z][a-z0-9_]*$/', $parent)) || !is_array($libraries) || !array_is_list($libraries) || array_diff(array_keys($data), ['id', 'name', 'namespace', 'version', 'parent', 'libraries']) !== []) {
+                $regions = $this->validateRegions($data['regions'] ?? [], $manifest);
+                if (!is_string($id) || !preg_match('/^[a-z][a-z0-9_]*$/', $id) || !is_string($name) || trim($name) === '' || !is_string($namespace) || !preg_match('/^[A-Z][A-Za-z0-9]*$/', $namespace) || !is_string($version) || trim($version) === '' || $parent !== null && (!is_string($parent) || !preg_match('/^[a-z][a-z0-9_]*$/', $parent)) || !is_array($libraries) || !array_is_list($libraries) || array_diff(array_keys($data), ['id', 'name', 'namespace', 'version', 'parent', 'libraries', 'regions']) !== []) {
                     throw new \InvalidArgumentException("Invalid theme metadata: {$manifest}");
                 }
                 foreach ($libraries as $library) {
@@ -79,13 +80,16 @@ final class ThemeManager
                 if (isset($namespaces[$namespaceKey])) {
                     throw new \InvalidArgumentException("Duplicate theme namespace: {$namespace}");
                 }
-                $themes[$id] = new Theme($id, $namespace, $path, $parent, $libraries);
+                $themes[$id] = new Theme($id, $namespace, $path, $parent, $libraries, $regions);
                 $namespaces[$namespaceKey] = true;
             }
         }
 
         foreach (array_keys($themes) as $id) {
             $this->lineageFor($id, $themes);
+        }
+        foreach (array_keys($themes) as $id) {
+            $this->regions($id, $themes);
         }
         if ($this->useCache) {
             $this->writeCache($themes);
@@ -180,6 +184,51 @@ final class ThemeManager
         return $lineage;
     }
 
+    /** @param array<string, Theme>|null $themes
+     *  @return array<string, string|null>
+     */
+    public function regions(string $id, ?array $themes = null): array
+    {
+        $regions = [];
+        foreach (array_reverse($this->lineageFor($id, $themes ?? $this->discover())) as $theme) {
+            $regions = array_replace($regions, $theme->regions);
+        }
+        foreach ($regions as $name => $parent) {
+            $seen = [$name => true];
+            while ($parent !== null) {
+                if (!array_key_exists($parent, $regions)) {
+                    throw new \InvalidArgumentException("Region {$name} has unknown parent {$parent}.");
+                }
+                if (isset($seen[$parent])) {
+                    throw new \InvalidArgumentException("Circular region nesting involving {$name}.");
+                }
+                $seen[$parent] = true;
+                $parent = $regions[$parent];
+            }
+        }
+        return $regions;
+    }
+
+    /** @return array<string, string|null> */
+    private function validateRegions(mixed $value, string $source): array
+    {
+        if (!is_array($value) || array_is_list($value) && $value !== []) {
+            throw new \InvalidArgumentException("Invalid regions in {$source}.");
+        }
+        $regions = [];
+        foreach ($value as $id => $definition) {
+            if (!is_string($id) || !preg_match('/^[a-z][a-z0-9_]*$/', $id) || !is_array($definition) || array_diff(array_keys($definition), ['parent']) !== []) {
+                throw new \InvalidArgumentException("Invalid region in {$source}.");
+            }
+            $parent = $definition['parent'] ?? null;
+            if ($parent !== null && (!is_string($parent) || !preg_match('/^[a-z][a-z0-9_]*$/', $parent))) {
+                throw new \InvalidArgumentException("Invalid region parent in {$source}.");
+            }
+            $regions[$id] = $parent;
+        }
+        return $regions;
+    }
+
     /** @return list<string> */
     private function roots(): array
     {
@@ -199,7 +248,7 @@ final class ThemeManager
         }
         $contents = file_get_contents($path);
         $cache = $contents === false ? null : json_decode($contents, true);
-        if (!is_array($cache) || ($cache['version'] ?? null) !== 2 || ($cache['roots'] ?? null) !== $this->rootStamps() || !is_array($cache['themes'] ?? null) || !array_is_list($cache['themes'])) {
+        if (!is_array($cache) || ($cache['version'] ?? null) !== 3 || ($cache['roots'] ?? null) !== $this->rootStamps() || !is_array($cache['themes'] ?? null) || !array_is_list($cache['themes'])) {
             return null;
         }
         $themes = [];
@@ -212,7 +261,7 @@ final class ThemeManager
                     return null;
                 }
             }
-            $themes[$item['id']] = new Theme($item['id'], $item['namespace'], $item['path'], $item['parent'] ?? null, $item['libraries']);
+            $themes[$item['id']] = new Theme($item['id'], $item['namespace'], $item['path'], $item['parent'] ?? null, $item['libraries'], $item['regions'] ?? []);
         }
         try {
             foreach (array_keys($themes) as $id) {
@@ -240,10 +289,11 @@ final class ThemeManager
                 'path' => $theme->path,
                 'parent' => $theme->parentId,
                 'libraries' => $theme->libraries,
+                'regions' => $theme->regions,
                 'stamp' => $this->themeStamp($theme->path),
             ];
         }
-        $contents = json_encode(['version' => 2, 'roots' => $this->rootStamps(), 'themes' => $items], JSON_THROW_ON_ERROR);
+        $contents = json_encode(['version' => 3, 'roots' => $this->rootStamps(), 'themes' => $items], JSON_THROW_ON_ERROR);
         $temporary = tempnam($directory, 'themes-');
         if ($temporary === false || file_put_contents($temporary, $contents) === false || !rename($temporary, $directory . '/themes.json')) {
             if ($temporary !== false) {

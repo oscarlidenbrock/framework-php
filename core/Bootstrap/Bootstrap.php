@@ -24,6 +24,8 @@ use Framework\Http\HttpKernel;
 use Framework\Module\ModuleManager;
 use Framework\Module\Module;
 use Framework\Template\TemplateManager;
+use Framework\Block\BlockRegistry;
+use Framework\Block\RegionRenderer;
 use Framework\Theme\ThemeManager;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -126,6 +128,9 @@ final class Bootstrap
         $container->setParameter('framework.enabled_module_paths', array_column(array_map(static fn (Module $module): array => ['id' => $module->id, 'path' => $module->path], $enabled), 'path', 'id'));
         $container->set(ConfigManager::class, $configuration);
         $container->set(PermissionRegistry::class, $permissions);
+        $blocks = new Definition(BlockRegistry::class);
+        $blocks->setPublic(true);
+        $container->setDefinition(BlockRegistry::class, $blocks);
         $container->set(EntityTypeRegistry::class, new EntityTypeRegistry());
         $fieldTypes = new Definition(FieldTypeRegistry::class);
         $fieldTypes->setPublic(true);
@@ -188,7 +193,17 @@ final class Bootstrap
             $formatters->addMethodCall('register', [new Reference($id)]);
         }
 
+        foreach (array_keys($container->findTaggedServiceIds('framework.block')) as $id) {
+            $blocks->addMethodCall('register', [new Reference($id)]);
+        }
+
         $container->compile();
+        if ($container->has('block.placements')) {
+            $registry = $container->get(BlockRegistry::class);
+            $placement = $container->get('block.placements');
+            $templates->setRegionRenderer(new RegionRenderer($themes, $registry, $assets, $templates, $placement->placements(...)));
+            $adminTemplates->setRegionRenderer(new RegionRenderer($themes, $registry, $adminAssets, $adminTemplates, $placement->placements(...), true));
+        }
         foreach ($routes as $route) {
             if (!$container->has($route->getDefault('_controller'))) {
                 throw new \InvalidArgumentException('Route controller must be a public service: ' . $route->getDefault('_controller'));

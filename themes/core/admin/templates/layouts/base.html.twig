@@ -33,6 +33,7 @@
             </header>
             <main id="main-content" class="admin-main" tabindex="-1">
                 {% block content %}{% endblock %}
+                {{ page|default('') }}
             </main>
         </div>
     </div>

@@ -41,6 +41,38 @@ final class ThemeManagerTest extends TestCase
         self::assertSame(['base/global'], (new ThemeManager($this->root, require dirname(__DIR__) . '/vendor/autoload.php', true))->discover()['base']->libraries);
     }
 
+    public function testRegionInheritanceAndSubregions(): void
+    {
+        $this->theme('core', 'base', 'RegionBaseTheme', null, "regions:
+  page: {}
+  sidebar: {parent: page}
+");
+        $this->theme('custom', 'child', 'RegionChildTheme', 'base', "regions:
+  sidebar: {}
+  footer: {parent: page}
+");
+        self::assertSame(['page' => null, 'sidebar' => null, 'footer' => 'page'], $this->manager()->regions('child'));
+    }
+
+    public function testCircularRegionNestingFailsDiscovery(): void
+    {
+        $this->theme('core', 'base', 'RegionCycleTheme', null, "regions:
+  page: {parent: sidebar}
+  sidebar: {parent: page}
+");
+        $this->expectExceptionMessage('Circular region nesting');
+        $this->manager()->discover();
+    }
+
+    public function testMissingRegionParentFailsDiscovery(): void
+    {
+        $this->theme('core', 'base', 'RegionMissingTheme', null, "regions:
+  sidebar: {parent: absent}
+");
+        $this->expectExceptionMessage('unknown parent');
+        $this->manager()->discover();
+    }
+
     public function testMissingParentFailsDiscovery(): void
     {
         $this->theme('custom', 'child', 'MissingParentTheme', 'absent');

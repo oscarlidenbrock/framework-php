@@ -1,0 +1,4 @@
+blocks:
+  label: Blocks
+  route: block.placements
+  permission: block.placements.view

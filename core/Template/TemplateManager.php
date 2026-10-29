@@ -15,6 +15,7 @@ use Twig\Loader\FilesystemLoader;
 final class TemplateManager
 {
     private readonly Environment $twig;
+    private ?\Framework\Block\RegionRenderer $regions = null;
 
     /** @param list<Module> $enabledModules */
     public function __construct(
@@ -54,10 +55,27 @@ final class TemplateManager
         $this->twig->addExtension(new AssetExtension($assets));
     }
 
+    public function setRegionRenderer(\Framework\Block\RegionRenderer $regions): void
+    {
+        $this->regions = $regions;
+    }
+
+    public function hasTemplate(string $template): bool
+    {
+        return $this->twig->getLoader()->exists($template);
+    }
+
+    /** @param array<string, mixed> $variables */
+    public function renderFragment(string $template, array $variables): string
+    {
+        return $this->twig->render($template, $variables);
+    }
+
     /** @param array<string, mixed> $context */
     public function render(string $template, array $context = []): string
     {
         try {
+            $context = array_replace($this->regions?->render() ?? [], $context);
             $this->assets->prepare();
             return $this->twig->render($template, $context);
         } finally {
@@ -84,6 +102,7 @@ final class TemplateManager
                 }
                 $this->assets->attachLibrary($library);
             }
+            $variables = array_replace($this->regions?->render() ?? [], $variables);
             $this->assets->prepare();
 
             return new Response($this->twig->render($template, $variables), $status, ['Content-Type' => 'text/html; charset=UTF-8']);

@@ -13,6 +13,8 @@ final readonly class Theme
         public ?string $parentId,
         /** @var list<string> */
         public array $libraries,
+        /** @var array<string, string|null> */
+        public array $regions = [],
     ) {
     }
 }

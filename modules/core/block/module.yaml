@@ -1,0 +1,5 @@
+id: block
+name: Blocks
+namespace: Block
+version: 0.1.0
+requires: [admin]

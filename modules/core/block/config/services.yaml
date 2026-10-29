@@ -1,0 +1,9 @@
+services:
+  block.placements:
+    class: Module\Block\PlacementManager
+    arguments: ['@Framework\Database\DatabaseRegistry', '@Framework\Theme\ThemeManager', '@Framework\Block\BlockRegistry', '%framework.workspace%', '@?Framework\Security\RequestSecurityInterface']
+    public: true
+  block.controller:
+    class: Module\Block\Controller\PlacementController
+    arguments: ['@block.placements', '@Framework\Theme\ThemeManager', '@Framework\Block\BlockRegistry', '@?admin.page_renderer', '@?Framework\Security\CsrfInterface', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true

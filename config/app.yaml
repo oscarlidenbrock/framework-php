@@ -3,6 +3,7 @@ enabled_modules:
   - user
   - content
   - site
+  - block
   - example
 module_discovery_cache: false
 active_theme: default

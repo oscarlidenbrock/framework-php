@@ -14,6 +14,8 @@
 </head>
 <body>
     {% block content %}{% endblock %}
+    {{ page|default('') }}
+    {{ sidebar|default('') }}
 
     {% block scripts %}
         {{ assets_js('body') }}

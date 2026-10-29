@@ -5,3 +5,7 @@ version: 0.1.0
 parent: null
 libraries:
   - default/global
+
+regions:
+  page: {}
+  sidebar: {}

@@ -3,3 +3,6 @@ services:
     class: Module\Example\Controller\ExampleController
     arguments: ['@Framework\Template\TemplateManager', 'Example', 'Example module is running', '@?Framework\Config\SiteSettingsInterface']
     public: true
+  example.message_block:
+    class: Module\Example\MessageBlock
+    tags: ['framework.block']

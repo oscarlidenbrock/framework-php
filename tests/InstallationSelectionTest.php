@@ -22,7 +22,7 @@ final class InstallationSelectionTest extends TestCase
         foreach (['bin', 'vendor', 'config/workspaces/testing', 'config/workspaces/second', 'modules/core', 'modules/custom/addon/migrations', 'modules/custom/broken', 'themes/core/empty', 'themes/core/bad_library'] as $path) {
             mkdir($this->root . '/' . $path, 0775, true);
         }
-        foreach (['user', 'admin', 'site'] as $module) {
+        foreach (['user', 'admin', 'site', 'block'] as $module) {
             symlink(dirname(__DIR__) . '/modules/core/' . $module, $this->root . '/modules/core/' . $module);
         }
         symlink(dirname(__DIR__) . '/modules/custom/example', $this->root . '/modules/custom/example');
@@ -192,6 +192,33 @@ final class InstallationSelectionTest extends TestCase
         self::assertSame(302, $this->request('/admin/themes', 'POST', ['_csrf' => $this->csrf($themes), 'kind' => 'public', 'id' => 'admin_theme'], $cookie)->getStatusCode());
         self::assertSame('admin_theme', $this->nextCore('testing')->themes()->active()->id);
         self::assertSame(422, $this->request('/admin/themes', 'POST', ['_csrf' => $this->csrf($themes), 'kind' => 'admin', 'id' => 'missing'], $cookie)->getStatusCode());
+    }
+
+    public function testBlockPlacementPermissionsCsrfAndNextRequest(): void
+    {
+        file_put_contents($this->root . '/config/app.yaml', "enabled_modules: [user, admin, site, block, example]\nactive_theme: default\nadmin_theme: admin_theme\n");
+        $this->core = $this->nextCore('testing');
+        $this->core->database()->migrate();
+        $accounts = $this->core->container()->get('user.accounts');
+        self::assertInstanceOf(AccountManager::class, $accounts);
+        $accounts->createFirstAdministrator('admin@example.com', 'long secure password');
+        $accounts->register('guest@example.com', 'long secure password');
+        self::assertSame(403, $this->request('/admin/appearance/blocks')->getStatusCode());
+        $guest = $this->login('guest@example.com');
+        self::assertSame(403, $this->request('/admin/appearance/blocks', cookies: $guest)->getStatusCode());
+        self::assertSame(403, $this->request('/admin/appearance/blocks', 'POST', [], $guest)->getStatusCode());
+        $admin = $this->login();
+        $page = $this->request('/admin/appearance/blocks', cookies: $admin);
+        self::assertSame(200, $page->getStatusCode());
+        $data = ['blocks' => ['example.message' => ['region' => 'page', 'weight' => '2', 'enabled' => 'on']]];
+        self::assertSame(403, $this->request('/admin/appearance/blocks', 'POST', $data, $admin)->getStatusCode());
+        $data['_csrf'] = $this->csrf($page);
+        self::assertSame(302, $this->request('/admin/appearance/blocks', 'POST', $data, $admin)->getStatusCode());
+        $public = $this->nextCore('testing')->handle(Request::create('http://localhost/example'));
+        self::assertSame(200, $public->getStatusCode());
+        self::assertStringContainsString('A block contributed by the example module.', $public->getContent());
+        $data['blocks']['example.message']['region'] = 'absent';
+        self::assertSame(422, $this->request('/admin/appearance/blocks', 'POST', $data, $admin)->getStatusCode());
     }
 
     public function testUnprivilegedAccountCannotChangeSelectionThroughRoutesOrService(): void
