@@ -49,6 +49,14 @@ h2 { margin: 0; font-size: 1.18rem; }
 .admin-account-panel { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .admin-muted { margin: .45rem 0 0; color: #6d7c8e; }
 .admin-status { border-radius: 99px; padding: .3rem .7rem; background: #e3f3ee; color: #267262; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.admin-filter { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; margin: 0 0 1.2rem; }
+.admin-filter label { font-weight: 650; }
+.admin-filter select, .content-field select { min-height: 40px; border: 1px solid #8c9ab0; border-radius: 5px; padding: .45rem .65rem; background: #fff; color: inherit; }
+.admin-badge { display: inline-block; border-radius: 99px; padding: .15rem .55rem; background: #e9f0f3; color: #425b6b; font-size: .76rem; font-weight: 700; }
+.admin-structure-status { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.admin-settings { max-width: 38rem; margin: 1rem 0; border: 1px solid #d9e2e9; border-radius: 6px; padding: 1rem; }
+.admin-settings legend { padding: 0 .4rem; font-weight: 700; }
+.content-field small { color: #657789; }
 .admin-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table th, .admin-table td { padding: .85rem; border-bottom: 1px solid #e6ebef; text-align: left; }

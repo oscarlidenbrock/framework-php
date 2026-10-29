@@ -29,4 +29,10 @@ final class FieldTypeRegistry
     {
         return $this->types[$id] ?? throw new \InvalidArgumentException("Unknown field type: {$id}");
     }
+
+    /** @return list<string> */
+    public function ids(): array
+    {
+        return array_keys($this->types);
+    }
 }

@@ -30,7 +30,7 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 Persistence is optional. To configure it, copy `config/database.example.yaml` to ignored `config/database.yaml` and set the named environment variables outside the repository. See [docs/database.md](docs/database.md) for DBAL and ORM APIs, module mappings, and per-connection migration commands.
 
-The optional `content` module adds dynamic scalar content types. Enable it in `enabled_modules` after configuring a database, apply its migration, then create types and synchronize field changes explicitly. With `user` and `admin` enabled, authorized users can manage applied types at `/admin/content`; published records are readable at `/content/{type}/{id}`. See [docs/content.md](docs/content.md) for the Article example, CLI commands, storage API and current limits.
+The optional `content` module adds dynamic scalar content types. Enable it in `enabled_modules` after configuring a database and apply its migration. With `user` and `admin` enabled, authorized users define types and fields at `/admin/structure/content-types`, review and apply safe schema changes, then manage content at `/admin/content`. Published records are readable at `/content/{type}/{id}`. CLI commands remain available for structure operations and explicit schema review. See [docs/content.md](docs/content.md) for the Article example, CLI commands, storage API and current limits.
 
 The optional `user` and `admin` modules add login, registration (disabled by default), an explicit first administrator command, and a protected `/admin` dashboard. See [docs/security.md](docs/security.md) before enabling them.
 

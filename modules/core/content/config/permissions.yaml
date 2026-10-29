@@ -5,3 +5,6 @@ content.edit_own: Edit own content
 content.delete_any: Delete any content
 content.delete_own: Delete own content
 content.publish: Publish content
+content.structure_view: View content types and fields
+content.structure_manage: Create content types and change fields
+content.schema_apply: Apply safe content schema changes

@@ -1,0 +1,6 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ back_url }}">← Review schema</a></p>
+<h1>Schema could not be applied</h1>
+<p class="admin-error" role="alert">The database rejected this change. No further changes were attempted. Review the schema state and use the CLI for diagnostics before retrying.</p>
+{% endblock %}

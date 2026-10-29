@@ -10,6 +10,7 @@ use Framework\Database\DatabaseRegistry;
 use Framework\Entity\EntityTypeRegistry;
 use Framework\Field\FieldDefinition;
 use Framework\Field\FieldTypeRegistry;
+use Module\Content\Access\ContentPolicy;
 
 final class ContentTypeManager
 {
@@ -18,11 +19,16 @@ final class ContentTypeManager
         private readonly FieldTypeRegistry $fieldTypes,
         private readonly EntityTypeRegistry $entityTypes,
         private readonly ConfigManager $config,
+        private readonly ?ContentPolicy $policy = null,
     ) {
     }
 
-    public function create(string $namespace, string $label, string $description = '', ?string $module = null, ?string $connection = null): ContentType
+    public function create(string $namespace, string $label, string $description = '', ?string $module = null, ?string $connection = null, bool $applySchema = true): ContentType
     {
+        $this->requireHttpPermission('content.structure_manage');
+        if ($applySchema && $this->policy?->inRequest()) {
+            throw new \LogicException('HTTP content type creation requires a separate schema review.');
+        }
         $namespace = strtolower($namespace);
         self::validateNamespace($namespace);
         if (trim($label) === '' || mb_strlen($label) > 255 || $module !== null && !preg_match('/^[a-z][a-z0-9_]*$/', $module)) {
@@ -42,7 +48,9 @@ final class ContentTypeManager
         try {
             $schema = $this->schema($namespace, $database->name);
             $schema->installDefinitions(self::systemFields());
-            $schema->apply(true);
+            if ($applySchema) {
+                $schema->apply(true);
+            }
         } catch (\Throwable $exception) {
             $database->execute('UPDATE content_types SET schema_status = :status WHERE namespace = :namespace', ['status' => 'error', 'namespace' => $namespace]);
             throw $exception;
@@ -93,6 +101,7 @@ final class ContentTypeManager
     /** @param array<string, mixed> $definition */
     public function addField(string $namespace, array $definition, ?string $connection = null): FieldDefinition
     {
+        $this->requireHttpPermission('content.structure_manage');
         $type = $this->requireType($namespace, $connection);
         $field = FieldDefinition::fromArray($definition);
         if (in_array($field->name, ['title', 'created_at', 'updated_at', 'published', 'owner'], true)) {
@@ -113,6 +122,7 @@ final class ContentTypeManager
     /** @param array<string, mixed> $changes */
     public function updateField(string $namespace, string $fieldName, array $changes, ?string $connection = null): FieldDefinition
     {
+        $this->requireHttpPermission('content.structure_manage');
         $type = $this->requireType($namespace, $connection);
         $old = $this->fields($namespace, $type->connection)[$fieldName] ?? throw new \InvalidArgumentException("Unknown field: {$fieldName}");
         if (array_diff(array_keys($changes), ['label', 'type', 'required', 'default', 'settings', 'weight']) !== []) {
@@ -158,7 +168,7 @@ final class ContentTypeManager
     public function schema(string $namespace, ?string $connection = null): ContentSchemaManager
     {
         $type = $this->requireType($namespace, $connection);
-        return new ContentSchemaManager($this->database($type->connection), $this->fieldTypes, $type, $this);
+        return new ContentSchemaManager($this->database($type->connection), $this->fieldTypes, $type, $this, $this->policy);
     }
 
     public function database(?string $connection = null): DatabaseManager
@@ -186,6 +196,9 @@ final class ContentTypeManager
 
     public function writeField(DatabaseManager $database, string $namespace, FieldDefinition $field): void
     {
+        if ($this->policy?->inRequest() && !$this->policy->can('content.structure_manage') && (!$field->system || !$this->policy->can('content.schema_apply'))) {
+            $this->policy->require('content.structure_manage');
+        }
         $now = gmdate('Y-m-d H:i:s.u');
         $database->execute('INSERT INTO ' . self::fieldsTable($namespace) . ' (field_name, label, field_type, is_system, required, length, ' . $database->connection()->quoteIdentifier('precision') . ', scale, default_value, settings, weight, created_at, updated_at) VALUES (:name, :label, :type, :system, :required, :length, :precision, :scale, :default, :settings, :weight, :created, :updated)', [
             'name' => $field->name, 'label' => $field->label, 'type' => $field->type, 'system' => (int) $field->system,
@@ -197,10 +210,18 @@ final class ContentTypeManager
 
     public function markPending(string $namespace, string $connection): void
     {
+        $this->requireHttpPermission('content.structure_manage');
         $database = $this->database($connection);
         $changed = $database->execute("UPDATE content_types SET schema_status = 'pending', updated_at = :updated WHERE namespace = :namespace AND schema_status <> 'applying'", ['updated' => gmdate('Y-m-d H:i:s.u'), 'namespace' => $namespace]);
         if ($changed !== 1) {
             throw new \LogicException('Content schema is being applied.');
+        }
+    }
+
+    private function requireHttpPermission(string $permission): void
+    {
+        if ($this->policy?->inRequest()) {
+            $this->policy->require($permission);
         }
     }
 

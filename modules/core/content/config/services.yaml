@@ -1,7 +1,7 @@
 services:
   content.types:
     class: Module\Content\ContentType\ContentTypeManager
-    arguments: ['@Framework\Database\DatabaseRegistry', '@Framework\Field\FieldTypeRegistry', '@Framework\Entity\EntityTypeRegistry', '@Framework\Config\ConfigManager']
+    arguments: ['@Framework\Database\DatabaseRegistry', '@Framework\Field\FieldTypeRegistry', '@Framework\Entity\EntityTypeRegistry', '@Framework\Config\ConfigManager', '@content.policy']
     public: true
   content.storage:
     class: Module\Content\Storage\ContentStorage
@@ -22,6 +22,14 @@ services:
   content.administration:
     class: Module\Content\Administration\ContentAdministration
     arguments: ['@content.types', '@content.storage', '@content.policy']
+    public: true
+  content.structure:
+    class: Module\Content\Administration\ContentStructure
+    arguments: ['@content.types', '@Framework\Field\FieldTypeRegistry', '@Framework\Database\DatabaseRegistry', '@content.policy']
+    public: true
+  content.structure_controller:
+    class: Module\Content\Controller\StructureController
+    arguments: ['@content.structure', '@content.policy', '@?admin.page_renderer', '@?Framework\Security\CsrfInterface', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
     public: true
   content.admin_controller:
     class: Module\Content\Controller\AdministrationController

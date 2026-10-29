@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\TableDiff;
 use Framework\Database\DatabaseManager;
 use Framework\Field\FieldDefinition;
 use Framework\Field\FieldTypeRegistry;
+use Module\Content\Access\ContentPolicy;
 
 final class ContentSchemaManager
 {
@@ -17,12 +18,16 @@ final class ContentSchemaManager
         private readonly FieldTypeRegistry $fieldTypes,
         private readonly ContentType $type,
         private readonly ContentTypeManager $types,
+        private readonly ?ContentPolicy $policy = null,
     ) {
     }
 
     /** @param list<FieldDefinition> $definitions */
     public function installDefinitions(array $definitions): void
     {
+        if ($this->policy?->inRequest() && !$this->policy->can('content.structure_manage') && !$this->policy->can('content.schema_apply')) {
+            $this->policy->require('content.structure_manage');
+        }
         $schema = $this->database->connection()->createSchemaManager();
         $name = ContentTypeManager::fieldsTable($this->type->namespace);
         if (!$schema->tablesExist([$name])) {
@@ -71,6 +76,12 @@ final class ContentSchemaManager
 
     public function apply(bool $confirmed = false): void
     {
+        if ($this->policy?->inRequest()) {
+            $this->policy->require('content.schema_apply');
+            if ($confirmed) {
+                throw new \LogicException('HTTP schema application cannot force destructive changes.');
+            }
+        }
         $namespace = $this->type->namespace;
         $changes = $this->diff();
         if (in_array('drop_column', array_column($changes, 'kind'), true)) {

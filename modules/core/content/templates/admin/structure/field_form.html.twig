@@ -1,0 +1,40 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ back_url }}">← {{ type.label }} fields</a></p>
+<p class="admin-eyebrow">Structure · {{ type.connection }}</p>
+<h1>{{ existing ? 'Edit field' : 'Add field' }}</h1>
+<p class="admin-lead">Saving a definition does not change the content table. Review and apply the schema afterward.</p>
+{% if error %}<p class="admin-error" role="alert">{{ error }}</p>{% endif %}
+<div class="admin-card">
+    <form method="post" action="{{ action }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <div class="content-field"><label for="field-label">Label</label><input id="field-label" name="label" value="{{ values.label }}" required maxlength="255"></div>
+        {% if existing %}
+            <p><strong>Machine name:</strong> <code>{{ existing.name }}</code> <small>Names cannot be changed.</small></p>
+        {% else %}
+            <div class="content-field"><label for="field-name">Machine name</label><input id="field-name" name="name" value="{{ values.name }}" required pattern="[a-z][a-z0-9_]*" maxlength="40"></div>
+        {% endif %}
+        {% if existing and existing.system %}
+            <p><strong>Type:</strong> {{ existing.type }} · system field</p>
+        {% else %}
+            <div class="content-field"><label for="field-type">Field type</label><select id="field-type" name="type">{% for field_type in field_types %}<option value="{{ field_type }}"{% if values.type == field_type %} selected{% endif %}>{{ field_type }}</option>{% endfor %}</select></div>
+            <div class="content-field"><label><input type="checkbox" name="required" value="1"{% if values.required %} checked{% endif %}> Required</label></div>
+            <fieldset class="admin-settings"><legend>Default value</legend>
+                <label><input type="radio" name="default_mode" value="none"{% if values.default_mode == 'none' %} checked{% endif %}> No default</label>
+                <label><input type="radio" name="default_mode" value="value"{% if values.default_mode == 'value' %} checked{% endif %}> Use this value</label>
+                <div class="content-field"><label for="field-default">Value</label><input id="field-default" name="default" value="{{ values.default }}"><small>Boolean: true or false. Decimal: use a string value. Empty text is allowed for string and text fields.</small></div>
+            </fieldset>
+            <div class="content-field"><label for="field-weight">Order</label><input id="field-weight" name="weight" type="number" value="{{ values.weight }}"></div>
+        {% endif %}
+        <fieldset class="admin-settings"><legend>Type settings</legend>
+            <p class="admin-muted">Only the settings for the selected field type are used.</p>
+            <div class="content-field"><label for="field-length">String length</label><input id="field-length" name="length" type="number" min="1" max="65535" value="{{ values.length }}"></div>
+            {% if not (existing and existing.system) %}
+                <div class="content-field"><label for="field-precision">Decimal precision</label><input id="field-precision" name="precision" type="number" min="1" max="65" value="{{ values.precision }}"></div>
+                <div class="content-field"><label for="field-scale">Decimal scale</label><input id="field-scale" name="scale" type="number" min="0" value="{{ values.scale }}"></div>
+            {% endif %}
+        </fieldset>
+        <button type="submit">Save definition</button>
+    </form>
+</div>
+{% endblock %}

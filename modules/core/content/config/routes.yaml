@@ -33,3 +33,43 @@ content.public.show:
   controller: content.public_controller
   access: public
   requirements: {type: '[a-z][a-z0-9_]*', id: '\d+'}
+content.structure.index:
+  path: /admin/structure/content-types
+  methods: [GET]
+  controller: content.structure_controller
+  access: permission:content.structure_view
+content.structure.new:
+  path: /admin/structure/content-types/new
+  methods: [GET, POST]
+  controller: content.structure_controller
+  access: permission:content.structure_manage
+content.structure.show:
+  path: /admin/structure/content-types/{type}
+  methods: [GET]
+  controller: content.structure_controller
+  access: permission:content.structure_view
+  requirements: {type: '[a-z][a-z0-9_]*'}
+content.structure.field_new:
+  path: /admin/structure/content-types/{type}/fields/new
+  methods: [GET, POST]
+  controller: content.structure_controller
+  access: permission:content.structure_manage
+  requirements: {type: '[a-z][a-z0-9_]*'}
+content.structure.field_edit:
+  path: /admin/structure/content-types/{type}/fields/{field}
+  methods: [GET, POST]
+  controller: content.structure_controller
+  access: permission:content.structure_manage
+  requirements: {type: '[a-z][a-z0-9_]*', field: '[a-z][a-z0-9_]*'}
+content.structure.schema:
+  path: /admin/structure/content-types/{type}/schema
+  methods: [GET]
+  controller: content.structure_controller
+  access: permission:content.structure_view
+  requirements: {type: '[a-z][a-z0-9_]*'}
+content.structure.schema_apply:
+  path: /admin/structure/content-types/{type}/schema/apply
+  methods: [POST]
+  controller: content.structure_controller
+  access: permission:content.schema_apply
+  requirements: {type: '[a-z][a-z0-9_]*'}

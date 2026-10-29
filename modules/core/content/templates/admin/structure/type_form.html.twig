@@ -1,0 +1,17 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ back_url }}">← Content types</a></p>
+<p class="admin-eyebrow">Structure · {{ connection }}</p>
+<h1>Add content type</h1>
+<p class="admin-lead">Create a definition first. You will review its database schema separately.</p>
+{% if error %}<p class="admin-error" role="alert">{{ error }}</p>{% endif %}
+<div class="admin-card">
+    <form method="post" action="{{ action }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <div class="content-field"><label for="type-label">Name</label><input id="type-label" name="label" value="{{ values.label }}" required maxlength="255"><small>Visible to editors.</small></div>
+        <div class="content-field"><label for="type-namespace">Machine name</label><input id="type-namespace" name="namespace" value="{{ values.namespace }}" required pattern="[a-z][a-z0-9_]*" maxlength="30"><small>Lowercase letters, numbers and underscores. Cannot be renamed later.</small></div>
+        <div class="content-field"><label for="type-description">Description</label><textarea id="type-description" name="description" rows="3">{{ values.description }}</textarea></div>
+        <button type="submit">Create definition</button>
+    </form>
+</div>
+{% endblock %}

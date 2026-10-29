@@ -2,3 +2,7 @@ content:
   label: Content
   route: content.admin.index
   permission: content.view_admin
+structure:
+  label: Content types
+  route: content.structure.index
+  permission: content.structure_view

@@ -1,0 +1,26 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ back_url }}">← Content types</a></p>
+<div class="admin-toolbar">
+    <div><p class="admin-eyebrow">Structure · {{ type.connection }}</p><h1>{{ type.label }}</h1><p class="admin-muted"><code>{{ type.namespace }}</code>{% if type.description %} · {{ type.description }}{% endif %}</p></div>
+    {% if add_url %}<a class="button" href="{{ add_url }}">Add field</a>{% endif %}
+</div>
+{% if notice %}<p class="admin-notice" role="status">{{ notice }}</p>{% endif %}
+<div class="admin-panel admin-structure-status">
+    <div><p class="admin-eyebrow">Database schema</p><h2><span class="admin-badge">{{ type.schemaStatus|capitalize }}</span></h2><p class="admin-muted">Definitions and physical columns are managed separately.</p></div>
+    <a class="button secondary" href="{{ schema_url }}">Review schema changes</a>
+</div>
+<div class="admin-card admin-table-wrap">
+    <h2>Fields</h2>
+    <table class="admin-table">
+        <thead><tr><th scope="col">Label</th><th scope="col">Machine name</th><th scope="col">Type</th><th scope="col">Required</th><th scope="col">Action</th></tr></thead>
+        <tbody>{% for field in fields %}<tr>
+            <th scope="row">{{ field.label }}{% if field.system %} <span class="admin-badge">System</span>{% endif %}</th>
+            <td><code>{{ field.name }}</code></td><td>{{ field.type }}{% if field.settings.length is defined %} ({{ field.settings.length }}){% endif %}{% if field.settings.precision is defined %} ({{ field.settings.precision }}, {{ field.settings.scale }}){% endif %}</td>
+            <td>{{ field.required ? 'Yes' : 'No' }}</td>
+            <td>{% if field.edit_url %}<a href="{{ field.edit_url }}">Edit</a>{% else %}Protected{% endif %}</td>
+        </tr>{% endfor %}</tbody>
+    </table>
+</div>
+{% if content_url %}<p><a href="{{ content_url }}">Manage {{ type.label|lower }} content →</a></p>{% endif %}
+{% endblock %}
