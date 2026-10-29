@@ -1,0 +1,4 @@
+settings:
+  label: Settings
+  route: site.settings.view
+  permission: site.settings.view

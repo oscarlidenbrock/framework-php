@@ -1,0 +1,10 @@
+site.settings.view:
+  path: /admin/settings
+  methods: [GET]
+  controller: site.settings_controller
+  access: permission:site.settings.view
+site.settings.edit:
+  path: /admin/settings
+  methods: [POST]
+  controller: site.settings_controller
+  access: permission:site.settings.edit

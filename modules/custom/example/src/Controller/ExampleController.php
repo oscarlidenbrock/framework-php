@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Module\Example\Controller;
 
+use Framework\Config\SiteSettingsInterface;
 use Framework\Template\TemplateManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,6 +15,7 @@ final class ExampleController
         private readonly TemplateManager $templates,
         private readonly string $title,
         private readonly string $message,
+        private readonly ?SiteSettingsInterface $siteSettings = null,
     ) {
     }
 
@@ -22,7 +24,7 @@ final class ExampleController
         return $this->templates->renderResponse(
             '@example/index.html.twig',
             ['libraries' => ['example/base']],
-            ['title' => $this->title, 'message' => $this->message],
+            ['title' => $this->title, 'message' => $this->message, 'site_title' => $this->siteSettings?->get('title') ?? 'Framework'],
         );
     }
 }

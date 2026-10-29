@@ -34,6 +34,8 @@ The optional `content` module adds dynamic scalar content types. Enable it in `e
 
 The optional `user` and `admin` modules add login, registration (disabled by default), an explicit first administrator command, and a protected `/admin` dashboard. See [docs/security.md](docs/security.md) before enabling them.
 
+The `site` core module provides General settings at `/admin/settings`. After its explicit migration, authorized editors can override the site title and email per workspace or restore their YAML defaults. The public example page shows the effective title. See [docs/site-settings.md](docs/site-settings.md).
+
 `module_discovery_cache` and `theme_discovery_cache` store validated discovery data in `storage/cache/`. `twig_cache: true` stores compiled Twig templates there. Use these settings in production; remove the corresponding cache directories after deployments that preserve timestamps or change templates while auto reload is disabled.
 
 ```sh

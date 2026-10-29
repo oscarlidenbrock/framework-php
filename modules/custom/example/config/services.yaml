@@ -1,5 +1,5 @@
 services:
   example.controller:
     class: Module\Example\Controller\ExampleController
-    arguments: ['@Framework\Template\TemplateManager', 'Example', 'Example module is running']
+    arguments: ['@Framework\Template\TemplateManager', 'Example', 'Example module is running', '@?Framework\Config\SiteSettingsInterface']
     public: true

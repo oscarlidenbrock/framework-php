@@ -1,0 +1,12 @@
+services:
+  site.settings:
+    class: Module\Site\SiteSettings
+    arguments: ['@Framework\Config\ConfigManager', '@Framework\Database\DatabaseRegistry', '%framework.workspace%', '@?Framework\Security\RequestSecurityInterface']
+    public: true
+  Framework\Config\SiteSettingsInterface:
+    alias: site.settings
+    public: true
+  site.settings_controller:
+    class: Module\Site\Controller\SettingsController
+    arguments: ['@site.settings', '@?admin.page_renderer', '@?Framework\Security\CsrfInterface', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface', '@?Framework\Security\RequestSecurityInterface']
+    public: true

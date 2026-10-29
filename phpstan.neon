@@ -8,6 +8,8 @@ parameters:
         - modules/core/user/src
         - modules/core/user/migrations
         - modules/core/admin/src
+        - modules/core/site/src
+        - modules/core/site/migrations
         - tests
         - public
         - bin/console

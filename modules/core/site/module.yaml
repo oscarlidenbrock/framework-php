@@ -1,0 +1,9 @@
+id: site
+name: Site settings
+namespace: Site
+version: 0.1.0
+requires: []
+database:
+  migrations:
+    '*':
+      Module\Site\Migrations: migrations

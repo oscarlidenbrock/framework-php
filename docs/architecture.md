@@ -16,6 +16,7 @@
 | Module permissions, route access, accounts and minimal administration | Implemented first slice; lifecycle commands planned |
 | Optional named DBAL connections, per-connection ORM and module migrations | Implemented |
 | Host-selected workspaces and recursive YAML configuration overrides | Implemented |
+| Workspace-scoped site title and email overrides | Implemented in the `site` module; other configuration remains YAML |
 | Dynamic scalar content types, system fields and DBAL CRUD | Implemented; basic protected administration UI implemented, advanced fields planned |
 | Per-file asset HTML attributes and script placement | Implemented |
 | Theme regions, block placement and asset build pipeline | Planned |

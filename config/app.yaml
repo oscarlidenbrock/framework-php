@@ -2,6 +2,7 @@ enabled_modules:
   - admin
   - user
   - content
+  - site
   - example
 module_discovery_cache: false
 active_theme: default
