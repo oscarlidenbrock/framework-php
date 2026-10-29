@@ -36,7 +36,7 @@ final readonly class LibraryResolver
                 foreach ($library->assets['js'] as $script) {
                     $dependencyDeferred = $dependencyScript->attributes['defer'] || ($dependencyScript->attributes['type'] ?? null) === 'module';
                     $scriptDeferred = $script->attributes['defer'] || ($script->attributes['type'] ?? null) === 'module';
-                    if ($dependencyScript->attributes['async'] || $script->attributes['async'] || !$dependencyDeferred || !$scriptDeferred || $dependencyScript->position === 'body' && $script->position === 'head') {
+                    if ($dependencyScript->attributes['async'] || $script->attributes['async'] || !$dependencyDeferred || !$scriptDeferred || $dependencyScript->position !== $script->position && !($dependencyScript->position === 'head' && $script->position === 'body')) {
                         throw new \InvalidArgumentException("Library {$id} cannot guarantee script order after its dependencies");
                     }
                 }

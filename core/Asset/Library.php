@@ -7,7 +7,7 @@ namespace Framework\Asset;
 final readonly class Library
 {
     /** @param list<string> $dependencies
-     *  @param array{css: list<AssetDefinition>, js: list<AssetDefinition>} $assets
+     *  @param array{css: list<AssetDefinition>, js: list<AssetDefinition>, fonts: list<AssetDefinition>} $assets
      */
     public function __construct(
         public string $id,

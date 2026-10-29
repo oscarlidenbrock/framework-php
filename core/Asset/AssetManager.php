@@ -8,7 +8,7 @@ final class AssetManager
 {
     /** @var array<string, true> */
     private array $attached = [];
-    /** @var array{css: list<AssetDefinition>, js: list<AssetDefinition>}|null */
+    /** @var array{css: list<AssetDefinition>, js: list<AssetDefinition>, fonts: list<AssetDefinition>}|null */
     private ?array $prepared = null;
 
     /** @param list<string> $globalLibraries */
@@ -34,13 +34,13 @@ final class AssetManager
         }
         $registry = new AssetRegistry();
         foreach ($this->resolver->resolve([...$this->globalLibraries, ...array_keys($this->attached)]) as $library) {
-            foreach (['css', 'js'] as $type) {
+            foreach (['css', 'js', 'fonts'] as $type) {
                 foreach ($library->assets[$type] as $asset) {
                     $registry->add($asset);
                 }
             }
         }
-        $this->prepared = ['css' => $registry->ofType('css'), 'js' => $registry->ofType('js')];
+        $this->prepared = ['css' => $registry->ofType('css'), 'js' => $registry->ofType('js'), 'fonts' => $registry->ofType('fonts')];
     }
 
     /** @return list<AssetDefinition> */

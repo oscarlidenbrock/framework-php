@@ -8,8 +8,8 @@ final class AssetRegistry
 {
     /** @var array<string, AssetDefinition> */
     private array $byUrl = [];
-    /** @var array{css: list<AssetDefinition>, js: list<AssetDefinition>} */
-    private array $items = ['css' => [], 'js' => []];
+    /** @var array{css: list<AssetDefinition>, js: list<AssetDefinition>, fonts: list<AssetDefinition>} */
+    private array $items = ['css' => [], 'js' => [], 'fonts' => []];
 
     public function add(AssetDefinition $asset): void
     {

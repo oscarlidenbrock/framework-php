@@ -94,7 +94,7 @@ final class LibraryRegistry
             throw new \InvalidArgumentException("Libraries file must be a mapping: {$path}");
         }
         foreach ($definitions as $name => $definition) {
-            if (!is_string($name) || !preg_match('/^[a-z][a-z0-9_]*$/', $name) || !is_array($definition) || array_is_list($definition) && $definition !== [] || array_diff(array_keys($definition), ['version', 'dependencies', 'css', 'js']) !== []) {
+            if (!is_string($name) || !preg_match('/^[a-z][a-z0-9_]*$/', $name) || !is_array($definition) || array_is_list($definition) && $definition !== [] || array_diff(array_keys($definition), ['version', 'dependencies', 'css', 'js', 'fonts']) !== []) {
                 throw new \InvalidArgumentException("Invalid library definition in {$path}");
             }
             $id = $ownerId . '/' . $name;
@@ -114,9 +114,10 @@ final class LibraryRegistry
             $assets = $this->normalizer->normalizeGroups([
                 'css' => array_key_exists('css', $definition) ? $definition['css'] : [],
                 'js' => array_key_exists('js', $definition) ? $definition['js'] : [],
+                'fonts' => array_key_exists('fonts', $definition) ? $definition['fonts'] : [],
             ], $id);
-            $resolved = ['css' => [], 'js' => []];
-            foreach (['css', 'js'] as $type) {
+            $resolved = ['css' => [], 'js' => [], 'fonts' => []];
+            foreach (['css', 'js', 'fonts'] as $type) {
                 foreach ($assets[$type] as $asset) {
                     $file = $ownerPath . '/assets/' . $asset->path;
                     $root = realpath($ownerPath . '/assets');

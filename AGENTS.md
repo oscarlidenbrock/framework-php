@@ -197,8 +197,8 @@ The module loader must not depend on the presence of an HTTP request: CLI comman
 
 ### Mandatory asset library rules
 
-- All modules and themes must declare CSS and JavaScript resources through named libraries in `config/libraries.yaml`. Direct asset declarations in controllers, `module.yaml`, or `theme.yaml` are forbidden and rejected.
-- In each library, `css` and `js` accept a single path scalar or a mapping from file paths to option mappings. Do not use a `path` property or a list of file definitions.
+- All modules and themes must declare CSS, JavaScript and font resources through named libraries in `config/libraries.yaml`. Direct asset declarations in controllers, `module.yaml`, or `theme.yaml` are forbidden and rejected.
+- In each library, `css`, `js` and `fonts` accept a single path scalar or a mapping from file paths to option mappings. Do not use a `path` property or a list of file definitions.
 - Library IDs use `{extension_id}/{library_name}`. Module and theme extension IDs are globally unique. Only enabled modules and the active theme lineage register libraries.
 - `TemplateManager::renderResponse($template, ['libraries' => [...]], $variables, $status)` attaches named libraries. `Framework\Asset\AssetManager::attachLibrary()` is injectable into controllers and services for the same purpose. The former `css` and `js` response keys are rejected.
 - `theme.yaml` may list global library IDs under `libraries`. Parent theme libraries attach before child theme libraries; dependencies are resolved in stable topological order and cycles or unavailable libraries fail.
@@ -252,7 +252,7 @@ Define a single template namespace and override strategy; test its lookup order 
 - Controllers may receive `Framework\Template\TemplateManager` through the container and return its HTML `Response`. Existing controllers returning a `Response` directly remain supported.
 - Twig autoescaping and strict variables are enabled. Twig cache is disabled in development and configurable for production through `twig_cache`; production cache is stored outside `public/`.
 - Theme CSS and JS are declared in `config/libraries.yaml` and published explicitly to `public/assets/themes/`. Source assets remain in the theme directory. No template receives the service container.
-- Twig layouts render through `assets_css()` and `assets_js('head'|'body')`. These functions use the central renderer, escape URLs and attributes, and expose no attachment function from Twig. See `docs/assets.md` and ADR 0005.
+- Twig layouts render through `assets(type, slot)` for CSS, JavaScript and fonts. This function use the central renderer, escape URLs and attributes, and expose no attachment function from Twig. See `docs/assets.md` and ADR 0005.
 - The detailed format, lookup order, cache behavior and publication command are in `docs/themes.md` and ADR 0002.
 
 ## 7. HTTP, routing, controllers and rendering

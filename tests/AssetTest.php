@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 use Framework\Asset\AssetNormalizer;
+use Framework\Asset\AssetExtension;
+use Framework\Asset\AssetManager;
+use Framework\Asset\LibraryRegistry;
+use Framework\Asset\LibraryResolver;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 use Framework\Asset\AssetRegistry;
 use Framework\Asset\AssetRenderer;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -10,6 +16,17 @@ use PHPUnit\Framework\TestCase;
 
 final class AssetTest extends TestCase
 {
+    public function testTwigExposesUnifiedFunctionOnly(): void
+    {
+        $assets = new AssetManager(new LibraryResolver(new LibraryRegistry(sys_get_temp_dir(), [], [])), []);
+        $assets->prepare();
+        $twig = new Environment(new ArrayLoader(['asset' => "{{ assets('fonts', 'head') }}{{ assets('css', 'head') }}{{ assets('js', 'body') }}"]));
+        $twig->addExtension(new AssetExtension($assets));
+        self::assertSame('', $twig->render('asset'));
+        self::assertFalse($twig->getFunction('assets_css') !== null);
+        self::assertFalse($twig->getFunction('assets_js') !== null);
+    }
+
     public function testScalarPathUsesDefaultAttributes(): void
     {
         $assets = (new AssetNormalizer())->normalizeGroups(['css' => 'css/site.css', 'js' => 'js/site.js'], 'test');
@@ -50,8 +67,8 @@ final class AssetTest extends TestCase
         ], 'js', 'test')->withUrl('/assets/site.js');
         $renderer = new AssetRenderer();
 
-        $link = $renderer->stylesheets([$css]);
-        $script = $renderer->scripts([$js], 'head');
+        $link = $renderer->render([$css], 'css', 'head');
+        $script = $renderer->render([$js], 'js', 'head');
         self::assertStringContainsString('href="/assets/print.css?x=1&amp;y=&quot;"', $link);
         self::assertStringContainsString('media="print"', $link);
         self::assertStringContainsString('integrity="' . $integrity . '"', $link);
@@ -61,7 +78,19 @@ final class AssetTest extends TestCase
         self::assertStringContainsString(' async', $script);
         self::assertStringNotContainsString(' defer', $script);
         self::assertStringContainsString('data-note="&lt;safe&gt;"', $script);
-        self::assertSame('', $renderer->scripts([$js], 'body'));
+        self::assertSame('', $renderer->render([$js], 'js', 'body'));
+    }
+
+    public function testUnifiedRenderingSelectsTypeAndCustomSlot(): void
+    {
+        $normalizer = new AssetNormalizer();
+        $css = $normalizer->normalize('css/site.css', ['position' => 'print'], 'css', 'test')->withUrl('/site.css?x=1&y=2');
+        $font = $normalizer->normalize('fonts/site.woff2', [], 'fonts', 'test')->withUrl('/site.woff2');
+        $renderer = new AssetRenderer();
+        self::assertSame('', $renderer->render([$css], 'css', 'head'));
+        self::assertStringContainsString('href="/site.css?x=1&amp;y=2"', $renderer->render([$css], 'css', 'print'));
+        self::assertSame('<link rel="preload" as="font" href="/site.woff2" crossorigin="anonymous" type="font/woff2">', $renderer->render([$font], 'fonts', 'head'));
+        self::assertSame('', $renderer->render([$font], 'fonts', 'body'));
     }
 
     public function testRegistryDeduplicatesAndPreservesOrder(): void
@@ -88,7 +117,7 @@ final class AssetTest extends TestCase
     public function testExplicitFalseScriptOptionOmitsDeferAttribute(): void
     {
         $asset = (new AssetNormalizer())->normalize('js/site.js', ['defer' => false], 'js', 'test')->withUrl('/site.js');
-        self::assertStringNotContainsString(' defer', (new AssetRenderer())->scripts([$asset], 'body'));
+        self::assertStringNotContainsString(' defer', (new AssetRenderer())->render([$asset], 'js', 'body'));
     }
 
     public function testOldPathPropertyAndListsAreRejected(): void
@@ -125,7 +154,7 @@ final class AssetTest extends TestCase
         yield 'module with defer' => ['js', 'js/site.js', ['type' => 'module', 'defer' => true]];
         yield 'media on script' => ['js', 'js/site.js', ['media' => 'print']];
         yield 'defer on CSS' => ['css', 'css/site.css', ['defer' => true]];
-        yield 'invalid position' => ['js', 'js/site.js', ['position' => 'footer']];
+        yield 'invalid position' => ['js', 'js/site.js', ['position' => 'bad-slot']];
         yield 'invalid crossorigin' => ['css', 'css/site.css', ['crossorigin' => 'credentials']];
         yield 'invalid referrerpolicy' => ['css', 'css/site.css', ['referrerpolicy' => 'always']];
         yield 'invalid fetchpriority' => ['js', 'js/site.js', ['fetchpriority' => 'urgent']];
@@ -133,5 +162,8 @@ final class AssetTest extends TestCase
         yield 'null option' => ['js', 'js/site.js', ['async' => null]];
         yield 'wrong boolean type' => ['js', 'js/site.js', ['async' => 'true']];
         yield 'parent traversal' => ['css', 'css/../secret.css', []];
+        yield 'font type mismatch' => ['fonts', 'fonts/site.woff2', ['type' => 'font/woff']];
+        yield 'font unsafe format' => ['fonts', 'fonts/site.svg', []];
+        yield 'font event handler' => ['fonts', 'fonts/site.woff2', ['attributes' => ['onload' => 'bad']]];
     }
 }

@@ -18,18 +18,12 @@ final class AssetExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('assets_css', $this->stylesheets(...), ['is_safe' => ['html']]),
-            new TwigFunction('assets_js', $this->scripts(...), ['is_safe' => ['html']]),
+            new TwigFunction('assets', $this->render(...), ['is_safe' => ['html']]),
         ];
     }
 
-    public function stylesheets(): string
+    public function render(string $type, string $slot): string
     {
-        return $this->renderer->stylesheets($this->assets->assets('css'));
-    }
-
-    public function scripts(string $position): string
-    {
-        return $this->renderer->scripts($this->assets->assets('js'), $position);
+        return $this->renderer->render($this->assets->assets($type), $type, $slot);
     }
 }

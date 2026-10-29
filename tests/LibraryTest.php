@@ -182,6 +182,23 @@ YAML);
         $this->registry();
     }
 
+    public function testFontLibraryResolvesRendersAndPublishesDeclaredFile(): void
+    {
+        mkdir($this->modulePath . '/assets/fonts');
+        file_put_contents($this->modulePath . '/assets/fonts/site.woff2', 'font bytes');
+        file_put_contents($this->modulePath . '/assets/fonts/private.woff2', 'private');
+        $this->moduleLibraries("font:\n  fonts: fonts/site.woff2\n");
+        $registry = $this->registry();
+        $assets = new AssetManager(new LibraryResolver($registry), []);
+        $assets->prepare(['example/font', 'example/font']);
+        self::assertCount(1, $assets->assets('fonts'));
+        self::assertSame('/assets/modules/example/fonts/site.woff2', $assets->assets('fonts')[0]->url);
+        mkdir($this->root . '/public');
+        $registry->publish('module');
+        self::assertFileExists($this->root . '/public/assets/modules/example/fonts/site.woff2');
+        self::assertFileDoesNotExist($this->root . '/public/assets/modules/example/fonts/private.woff2');
+    }
+
     public function testPublishingOnlyCopiesDeclaredFiles(): void
     {
         mkdir($this->root . '/public');

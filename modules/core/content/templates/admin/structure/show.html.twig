@@ -23,4 +23,5 @@
     </table>
 </div>
 {% if content_url %}<p><a href="{{ content_url }}">Manage {{ type.label|lower }} content →</a></p>{% endif %}
+{{ parent() }}
 {% endblock %}

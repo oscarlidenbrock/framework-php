@@ -7,35 +7,26 @@ namespace Framework\Asset;
 final class AssetRenderer
 {
     /** @param list<AssetDefinition> $assets */
-    public function stylesheets(array $assets): string
+    public function render(array $assets, string $type, string $slot): string
     {
-        $html = [];
-        foreach ($assets as $asset) {
-            if ($asset->type !== 'css' || $asset->url === null) {
-                throw new \InvalidArgumentException('Expected a resolved stylesheet.');
-            }
-            $html[] = '<link rel="stylesheet" href="' . $this->escape($asset->url) . '"' . $this->attributes($asset->attributes) . '>';
-        }
-
-        return implode("\n", $html);
-    }
-
-    /** @param list<AssetDefinition> $assets */
-    public function scripts(array $assets, string $position): string
-    {
-        if (!in_array($position, ['head', 'body'], true)) {
-            throw new \InvalidArgumentException('Invalid script position.');
+        if (!in_array($type, ['css', 'js', 'fonts'], true) || !preg_match('/^[a-z][a-z0-9_]*$/', $slot)) {
+            throw new \InvalidArgumentException('Invalid asset type or slot.');
         }
         $html = [];
         foreach ($assets as $asset) {
-            if ($asset->type !== 'js' || $asset->url === null) {
-                throw new \InvalidArgumentException('Expected a resolved script.');
+            if ($asset->type !== $type || $asset->url === null) {
+                throw new \InvalidArgumentException('Expected a resolved asset of the requested type.');
             }
-            if ($asset->position === $position) {
-                $html[] = '<script src="' . $this->escape($asset->url) . '"' . $this->attributes($asset->attributes) . '></script>';
+            if ($asset->position !== $slot) {
+                continue;
             }
+            $url = $this->escape($asset->url);
+            $html[] = match ($type) {
+                'css' => '<link rel="stylesheet" href="' . $url . '"' . $this->attributes($asset->attributes) . '>',
+                'js' => '<script src="' . $url . '"' . $this->attributes($asset->attributes) . '></script>',
+                'fonts' => '<link rel="preload" as="font" href="' . $url . '"' . $this->attributes($asset->attributes) . '>',
+            };
         }
-
         return implode("\n", $html);
     }
 

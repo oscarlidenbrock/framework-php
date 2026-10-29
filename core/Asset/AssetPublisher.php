@@ -6,7 +6,7 @@ namespace Framework\Asset;
 
 final class AssetPublisher
 {
-    /** @param array{css: list<AssetDefinition>, js: list<AssetDefinition>} $assets */
+    /** @param array{css: list<AssetDefinition>, js: list<AssetDefinition>, fonts: list<AssetDefinition>} $assets */
     public function publish(string $sourceRoot, string $destinationRoot, string $publicRoot, array $assets): void
     {
         $realRoot = realpath($sourceRoot);
@@ -14,7 +14,7 @@ final class AssetPublisher
         if ($realPublicRoot === false || !is_dir($realPublicRoot)) {
             throw new \InvalidArgumentException("Public document root not found: {$publicRoot}");
         }
-        foreach (['css', 'js'] as $type) {
+        foreach (['css', 'js', 'fonts'] as $type) {
             foreach ($assets[$type] as $asset) {
                 $source = $sourceRoot . '/' . $asset->path;
                 $realSource = realpath($source);

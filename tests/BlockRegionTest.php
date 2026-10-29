@@ -36,10 +36,10 @@ final class BlockRegionTest extends TestCase
         mkdir($root . '/themes/core/base/templates/layouts', 0775, true);
         mkdir($root . '/modules/custom/external/templates', 0775, true);
         file_put_contents($root . '/themes/core/base/theme.yaml', "id: base\nname: Base\nnamespace: BlockBase\nversion: 0.1.0\nregions:\n  page: {}\n  nested: {parent: page}\n");
-        file_put_contents($root . '/themes/core/base/templates/layouts/base.html.twig', "{% block content %}{% endblock %}{{ page }}");
+        file_put_contents($root . '/themes/core/base/templates/layouts/base.html.twig', "{% block content %}{{ page }}{% endblock %}");
         file_put_contents($root . '/themes/core/base/templates/regions/page.html.twig', '<section>{{ content }}{{ nested }}</section>');
         file_put_contents($root . '/modules/custom/external/templates/block.html.twig', '<b>{{ message }}</b>');
-        file_put_contents($root . '/modules/custom/external/templates/page.html.twig', "{% extends '@theme/layouts/base.html.twig' %}{% block content %}Legacy{% endblock %}");
+        file_put_contents($root . '/modules/custom/external/templates/page.html.twig', "{% extends '@theme/layouts/base.html.twig' %}{% block content %}Legacy{{ parent() }}{% endblock %}");
         $loader = require dirname(__DIR__) . '/vendor/autoload.php';
         $themes = new ThemeManager($root, $loader);
         $themes->select('base', 'base');

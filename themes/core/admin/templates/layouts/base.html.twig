@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Administration</title>
-    {{ assets_css() }}
-    {{ assets_js('head') }}
+    {{ assets('fonts', 'head') }}
+    {{ assets('css', 'head') }}
+    {{ assets('js', 'head') }}
 </head>
 <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -32,11 +33,12 @@
                 </div>
             </header>
             <main id="main-content" class="admin-main" tabindex="-1">
-                {% block content %}{% endblock %}
-                {{ page|default('') }}
+                {% block content %}
+                    {{ page|default('') }}
+                {% endblock %}
             </main>
         </div>
     </div>
-    {{ assets_js('body') }}
+    {{ assets('js', 'body') }}
 </body>
 </html>

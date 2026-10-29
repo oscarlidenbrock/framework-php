@@ -15,4 +15,5 @@
 {% if apply_url %}
     <form method="post" action="{{ apply_url }}"><input type="hidden" name="_csrf" value="{{ csrf }}"><button type="submit">Apply safe changes</button></form>
 {% endif %}
+{{ parent() }}
 {% endblock %}

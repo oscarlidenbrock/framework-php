@@ -5,4 +5,5 @@
     {% if types is empty %}<p>No content types with an applied schema are available.</p>{% endif %}
     <ul>{% for type in types %}<li><a href="{{ type.url }}">{{ type.label }}</a></li>{% endfor %}</ul>
 </div>
+{{ parent() }}
 {% endblock %}

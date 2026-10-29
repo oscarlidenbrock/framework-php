@@ -6,19 +6,21 @@
     <title>{% block title %}{{ title|default('Framework') }}{% endblock %}</title>
 
     {% block stylesheets %}
-        {{ assets_css() }}
+        {{ assets('fonts', 'head') }}
+        {{ assets('css', 'head') }}
     {% endblock %}
     {% block head_scripts %}
-        {{ assets_js('head') }}
+        {{ assets('js', 'head') }}
     {% endblock %}
 </head>
 <body>
-    {% block content %}{% endblock %}
-    {{ page|default('') }}
-    {{ sidebar|default('') }}
+    {% block content %}
+        {{ page|default('') }}
+        {{ sidebar|default('') }}
+    {% endblock %}
 
     {% block scripts %}
-        {{ assets_js('body') }}
+        {{ assets('js', 'body') }}
     {% endblock %}
 </body>
 </html>
