@@ -7,3 +7,11 @@ services:
     class: Module\Content\Storage\ContentStorage
     arguments: ['@content.types', '@Framework\Field\FieldTypeRegistry']
     public: true
+  content.forms:
+    class: Module\Content\Form\ContentFormManager
+    arguments: ['@content.types', '@content.storage', '@Framework\Field\FieldTypeRegistry', '@Framework\Field\WidgetRegistry', '@Framework\Template\TemplateManager']
+    public: true
+  content.views:
+    class: Module\Content\Display\ContentViewManager
+    arguments: ['@content.types', '@Framework\Field\FormatterRegistry', '@Framework\Template\TemplateManager', '@Framework\Config\ConfigManager']
+    public: true

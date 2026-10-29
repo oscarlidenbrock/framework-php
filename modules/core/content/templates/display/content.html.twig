@@ -1,0 +1,5 @@
+<div class="content-view content-view--{{ mode }}">
+{% for field in fields %}
+    {{ include(field.template, field) }}
+{% endfor %}
+</div>

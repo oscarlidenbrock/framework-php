@@ -1,2 +1,5 @@
 content:
   connection: default
+  display_modes:
+    full: null
+    summary: [title]

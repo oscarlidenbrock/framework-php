@@ -1,0 +1,5 @@
+id: form_extension
+name: Form extension fixture
+namespace: FormExtension
+version: 0.1.0
+requires: [content]

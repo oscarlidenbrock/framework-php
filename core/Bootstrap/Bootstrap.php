@@ -13,6 +13,8 @@ use Framework\Config\WorkspaceResolver;
 use Framework\Database\DatabaseRegistry;
 use Framework\Entity\EntityTypeRegistry;
 use Framework\Field\FieldTypeRegistry;
+use Framework\Field\WidgetRegistry;
+use Framework\Field\FormatterRegistry;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Framework\Http\HttpKernel;
@@ -106,6 +108,12 @@ final class Bootstrap
         $fieldTypes = new Definition(FieldTypeRegistry::class);
         $fieldTypes->setPublic(true);
         $container->setDefinition(FieldTypeRegistry::class, $fieldTypes);
+        $widgets = new Definition(WidgetRegistry::class);
+        $widgets->setPublic(true);
+        $container->setDefinition(WidgetRegistry::class, $widgets);
+        $formatters = new Definition(FormatterRegistry::class);
+        $formatters->setPublic(true);
+        $container->setDefinition(FormatterRegistry::class, $formatters);
         $container->set(TemplateManager::class, $templates);
         $container->set(AssetManager::class, $assets);
         $container->set(DatabaseRegistry::class, $databases);
@@ -145,6 +153,12 @@ final class Bootstrap
 
         foreach (array_keys($container->findTaggedServiceIds('framework.field_type')) as $id) {
             $fieldTypes->addMethodCall('register', [new Reference($id)]);
+        }
+        foreach (array_keys($container->findTaggedServiceIds('framework.field_widget')) as $id) {
+            $widgets->addMethodCall('register', [new Reference($id)]);
+        }
+        foreach (array_keys($container->findTaggedServiceIds('framework.field_formatter')) as $id) {
+            $formatters->addMethodCall('register', [new Reference($id)]);
         }
 
         $container->compile();

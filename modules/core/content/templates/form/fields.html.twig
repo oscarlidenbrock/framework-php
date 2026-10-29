@@ -1,0 +1,5 @@
+<div class="content-fields">
+{% for field in fields %}
+    {{ include(field.template, field) }}
+{% endfor %}
+</div>

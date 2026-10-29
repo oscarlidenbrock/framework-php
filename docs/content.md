@@ -56,4 +56,29 @@ Storage rejects unknown fields and filters, validates values and defaults, uses 
 
 An enabled module may register a service implementing `Framework\Field\FieldTypeInterface` with the `framework.field_type` tag in `config/services.yaml`. The registry validates unique type IDs and injects tagged services before first use. The interface covers settings validation, PHP/database conversion and DBAL column creation. A fixture in `tests/ContentTest.php` registers and uses a custom `slug` field type without editing the core.
 
-This phase has no dynamic forms, admin UI, permissions, authenticated ownership, multivalue fields, references, revisions or translations. Field and namespace renames and automatic column deletion are deferred. SQLite integration tests exercise schema changes and CRUD; MySQL/MariaDB behavior still needs live integration verification. SQL dialect and DDL behavior remain driver-dependent.
+## Forms, widgets and formatters
+
+When `content` is enabled, inject `content.forms` (`ContentFormManager`) and `content.views` (`ContentViewManager`). Form construction reads the current field definitions. `created_at`, `updated_at` and `owner` are never editable. The form renders a Twig field fragment; it does not publish a write route or include a `<form>` element. An eventual HTTP handler must supply access control, CSRF protection and a suitable form element before accepting writes.
+
+```php
+$form = $forms->build('article');
+$html = $form->render();
+$result = $form->submit(['title' => 'Example', 'published' => '1']);
+if ($result->isValid()) {
+    $storage->save($result->record);
+} else {
+    $html = $form->render(['title' => 'Example'], $result->errors);
+}
+
+$edit = $forms->build('article', $storage->find('article', 1));
+$result = $edit->submit(['title' => 'Revised']);
+$view = $views->render($result->record, 'summary');
+```
+
+`submit()` returns a `ContentFormResult` with field-keyed errors and a record only when valid. It does not save. Widgets convert control values, then the existing Field Type validates each value. Content Storage validates again on save. A missing value on creation uses its field default; a missing non-checkbox value on edit preserves the stored value; a missing checkbox means false. Empty text remains an empty string; empty numeric/date controls become null; explicit null remains null. Required values and invalid conversions report field errors. Managed or unknown submitted keys are rejected. The returned edit record is separate from the original, so invalid submissions do not mutate a persisted object.
+
+`config/content.yaml` defines `content.display_modes`: `full: null` displays every field, while `summary: [title]` displays only title. Workspace overrides can replace these lists. `ContentViewManager::render($record, 'full'|'summary')` selects fields and Twig escapes labels and values. Module/theme template overrides use the existing `@content` lookup precedence. No display configuration is stored in Content Type tables.
+
+An enabled module can tag services implementing `Framework\Field\WidgetInterface` with `framework.field_widget`, and services implementing `Framework\Field\FormatterInterface` with `framework.field_formatter`. Their IDs match a Field Type ID; duplicates and unknown IDs fail clearly. The fixture module in `tests/fixtures/form_extension/` supplies a `slug` Field Type, widget and formatter with its own Twig templates, without modifying framework code. Built-in widgets cover text, textarea, number, checkbox, date and date/time controls. Widgets needing CSS or JavaScript must use `AssetManager::attachLibrary()` with a library declared in their module's `config/libraries.yaml` when composing an HTTP response; never emit asset tags from a widget template. The built-in widgets require no assets.
+
+This phase has no admin UI, HTTP write endpoint, permissions, CSRF integration, authenticated ownership, multivalue fields, references, revisions or translations. Field and namespace renames and automatic column deletion are deferred. SQLite integration tests exercise schema changes, forms and CRUD; MySQL/MariaDB behavior still needs live integration verification. SQL dialect and DDL behavior remain driver-dependent.

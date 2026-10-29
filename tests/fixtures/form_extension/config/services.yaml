@@ -1,0 +1,10 @@
+services:
+  form_extension.slug_type:
+    class: Module\FormExtension\SlugFieldType
+    tags: [framework.field_type]
+  form_extension.slug_widget:
+    class: Module\FormExtension\SlugWidget
+    tags: [framework.field_widget]
+  form_extension.slug_formatter:
+    class: Module\FormExtension\SlugFormatter
+    tags: [framework.field_formatter]

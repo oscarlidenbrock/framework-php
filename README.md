@@ -42,3 +42,5 @@ composer validate
 ```
 
 See [docs/modules.md](docs/modules.md) for module services and routes, [docs/themes.md](docs/themes.md) for themes and Twig overrides, [docs/assets.md](docs/assets.md) for mandatory asset libraries, [docs/workspaces.md](docs/workspaces.md) for configuration inheritance, and [docs/architecture.md](docs/architecture.md) for feature status.
+
+Content forms and Twig views can be built from dynamic Field Definitions through the `content.forms` and `content.views` services. The service-only Form API has no public write route; see [docs/content.md](docs/content.md) for usage and current security limits.
