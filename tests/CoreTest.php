@@ -25,7 +25,7 @@ final class CoreTest extends TestCase
 
         self::assertSame(['example'], array_map(static fn ($module): string => $module->id, $core->enabledModules()));
         self::assertArrayHasKey('example', $core->modules()->discover());
-        $response = $core->handle(Request::create('/example', 'GET'));
+        $response = $core->handle(Request::create('http://framework.dev/example', 'GET'));
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('<title>Example</title>', $response->getContent());
         self::assertStringContainsString('<p>Example module is running</p>', $response->getContent());
@@ -39,8 +39,8 @@ final class CoreTest extends TestCase
     {
         $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\n"), 'development');
 
-        self::assertSame(404, $core->handle(Request::create('/missing'))->getStatusCode());
-        $response = $core->handle(Request::create('/example', 'POST'));
+        self::assertSame(404, $core->handle(Request::create('http://framework.dev/missing'))->getStatusCode());
+        $response = $core->handle(Request::create('http://framework.dev/example', 'POST'));
         self::assertSame(405, $response->getStatusCode());
         self::assertSame('GET', $response->headers->get('Allow'));
     }
@@ -49,7 +49,7 @@ final class CoreTest extends TestCase
     {
         $core = new Core(dirname(__DIR__), $this->config("enabled_modules: [example]\nactive_theme: contrast\n"), 'development');
 
-        $response = $core->handle(Request::create('/example'));
+        $response = $core->handle(Request::create('http://framework.dev/example'));
         self::assertSame(200, $response->getStatusCode());
         self::assertStringContainsString('<main class="contrast-example">', $response->getContent());
         self::assertStringContainsString('<title>Example</title>', $response->getContent());
@@ -72,7 +72,7 @@ final class CoreTest extends TestCase
 
         self::assertSame([], $core->enabledModules());
         self::assertArrayHasKey('example', $core->modules()->discover());
-        self::assertSame(404, $core->handle(Request::create('/example'))->getStatusCode());
+        self::assertSame(404, $core->handle(Request::create('http://framework.dev/example'))->getStatusCode());
     }
 
     public function testUnknownEnabledModuleFailsDuringBoot(): void
