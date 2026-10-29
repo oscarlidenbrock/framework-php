@@ -16,7 +16,7 @@ Define `mytheme/global` in `config/libraries.yaml` inside the theme. Its CSS and
 
 IDs are lowercase letters, digits and underscores beginning with a letter. Namespace segments begin with an uppercase letter and must be unique regardless of case. `parent` is another theme ID or `null`. Missing parents, cycles, duplicate IDs and duplicate namespaces fail discovery. PHP classes, if needed, live in `src/` under `Theme\MyTheme\`; Composer registers that prefix during bootstrap.
 
-Set `active_theme` and `admin_theme` in `config/app.yaml`. Both are validated at boot. Public rendering uses `active_theme`; administration rendering remains future work. The bundled `default` theme supplies the layout. The `contrast` child theme demonstrates a template override: select it and visit `/example`.
+Set `active_theme` and `admin_theme` in `config/app.yaml`. Both are validated at boot. Public rendering uses `active_theme`; administration pages use a separate TemplateManager with `admin_theme` and its own global libraries. The bundled `admin_theme` provides a sidebar layout and dashboard. Enabled modules add navigation through `config/admin_navigation.yaml`, naming a route and required permission. Run `APP_WORKSPACE=development php bin/console theme:publish-assets` after installing or changing the theme so its CSS is served from `public/assets/`; runtime requests never publish source files. The `default` theme supplies the public layout. The `contrast` child theme demonstrates a template override: select it and visit `/example`.
 
 ## Template lookup
 

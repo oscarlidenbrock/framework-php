@@ -1,0 +1,5 @@
+admin.dashboard:
+  path: /admin
+  methods: [GET]
+  controller: admin.dashboard_controller
+  access: permission:admin.access

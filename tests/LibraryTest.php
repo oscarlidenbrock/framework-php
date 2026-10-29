@@ -240,7 +240,7 @@ YAML);
         $container = new ContainerBuilder();
         $container->set('test.controller', $controller);
         $routes = new RouteCollection();
-        $routes->add('test', new Route('/test', ['_controller' => 'test.controller'], methods: ['GET']));
+        $routes->add('test', new Route('/test', ['_controller' => 'test.controller', '_access' => 'public'], methods: ['GET']));
         $kernel = new HttpKernel($routes, $container, $assets);
 
         self::assertSame(200, $kernel->handle(Request::create('/test'))->getStatusCode());

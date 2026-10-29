@@ -6,6 +6,8 @@ namespace Framework\Http;
 
 use Framework\Asset\AssetManager;
 use Framework\Database\DatabaseRegistry;
+use Framework\Security\AccessDeniedException;
+use Framework\Security\RequestSecurityInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,6 +24,7 @@ final class HttpKernel
         private readonly ContainerInterface $container,
         private readonly AssetManager $assets,
         private readonly ?DatabaseRegistry $databases = null,
+        private readonly ?RequestSecurityInterface $security = null,
     ) {
     }
 
@@ -29,10 +32,16 @@ final class HttpKernel
     {
         $this->assets->reset();
         try {
-            return $this->dispatch($request);
+            $this->security?->begin($request);
+            $response = $this->dispatch($request);
+            $this->security?->finish($response, $request);
+            return $response;
+        } catch (\Throwable) {
+            return new Response('Internal Server Error', Response::HTTP_INTERNAL_SERVER_ERROR);
         } finally {
             $this->assets->reset();
             $this->databases?->resetRequest();
+            $this->security?->end();
         }
     }
 
@@ -50,8 +59,13 @@ final class HttpKernel
         }
 
         $controllerId = $parameters['_controller'];
-        unset($parameters['_controller']);
+        $access = $parameters['_access'] ?? null;
+        unset($parameters['_controller'], $parameters['_access']);
         $request->attributes->add($parameters);
+
+        if (!$this->allowed($access)) {
+            return new Response('Forbidden', Response::HTTP_FORBIDDEN);
+        }
 
         try {
             $controller = $this->container->get($controllerId);
@@ -64,8 +78,24 @@ final class HttpKernel
             }
 
             return $response;
+        } catch (AccessDeniedException) {
+            return new Response('Forbidden', Response::HTTP_FORBIDDEN);
         } catch (\Throwable) {
             return new Response('Internal Server Error', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function allowed(mixed $access): bool
+    {
+        if ($access === 'public') {
+            return true;
+        }
+        if ($access === 'authenticated') {
+            return $this->security?->identity() !== null;
+        }
+        if (is_string($access) && str_starts_with($access, 'permission:')) {
+            return $this->security?->can(substr($access, strlen('permission:'))) ?? false;
+        }
+        return false;
     }
 }

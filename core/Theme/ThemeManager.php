@@ -130,6 +130,12 @@ final class ThemeManager
         return $this->lineageFor($this->active()->id, $this->discover());
     }
 
+    /** @return list<Theme> Administration theme first, followed by its ancestors. */
+    public function administrationLineage(): array
+    {
+        return $this->lineageFor($this->administration()->id, $this->discover());
+    }
+
     /** @return list<string> */
     public function globalLibraries(): array
     {
@@ -138,6 +144,16 @@ final class ThemeManager
             array_push($libraries, ...$theme->libraries);
         }
 
+        return $libraries;
+    }
+
+    /** @return list<string> */
+    public function administrationLibraries(): array
+    {
+        $libraries = [];
+        foreach (array_reverse($this->administrationLineage()) as $theme) {
+            array_push($libraries, ...$theme->libraries);
+        }
         return $libraries;
     }
 

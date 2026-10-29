@@ -22,6 +22,8 @@ final class ContentForm
         private readonly FieldTypeRegistry $fieldTypes,
         private readonly WidgetRegistry $widgets,
         private readonly TemplateManager $templates,
+        /** @var list<string> */
+        private readonly array $excluded = [],
     ) {
     }
 
@@ -90,6 +92,6 @@ final class ContentForm
     /** @return array<string, \Framework\Field\FieldDefinition> */
     private function editableFields(): array
     {
-        return array_diff_key($this->types->fields($this->type, $this->connection), array_flip(['created_at', 'updated_at', 'owner']));
+        return array_diff_key($this->types->fields($this->type, $this->connection), array_flip(['created_at', 'updated_at', 'owner', ...$this->excluded]));
     }
 }

@@ -22,12 +22,13 @@ final class ContentFormManager
     ) {
     }
 
-    public function build(string $type, ?ContentRecord $record = null, ?string $connection = null): ContentForm
+    /** @param list<string> $excluded */
+    public function build(string $type, ?ContentRecord $record = null, ?string $connection = null, array $excluded = []): ContentForm
     {
         $definition = $this->types->requireType($type, $connection ?? $record?->connection);
         if ($record !== null && ($record->type !== $type || $record->connection !== $definition->connection)) {
             throw new \InvalidArgumentException('Form record does not match its content type or connection.');
         }
-        return new ContentForm($type, $definition->connection, $record, $this->types, $this->storage, $this->fieldTypes, $this->widgets, $this->templates);
+        return new ContentForm($type, $definition->connection, $record, $this->types, $this->storage, $this->fieldTypes, $this->widgets, $this->templates, $excluded);
     }
 }

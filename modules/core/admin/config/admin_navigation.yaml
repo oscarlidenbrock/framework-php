@@ -1,0 +1,4 @@
+dashboard:
+  label: Dashboard
+  route: admin.dashboard
+  permission: admin.access

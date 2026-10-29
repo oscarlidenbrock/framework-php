@@ -1,0 +1,8 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<div class="admin-toolbar"><h1>Content types</h1></div>
+<div class="admin-card">
+    {% if types is empty %}<p>No content types with an applied schema are available.</p>{% endif %}
+    <ul>{% for type in types %}<li><a href="{{ type.url }}">{{ type.label }}</a></li>{% endfor %}</ul>
+</div>
+{% endblock %}

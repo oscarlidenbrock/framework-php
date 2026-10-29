@@ -1,0 +1,6 @@
+id: admin_theme
+name: Administration
+namespace: Administration
+version: 0.1.0
+parent: null
+libraries: [admin_theme/global]

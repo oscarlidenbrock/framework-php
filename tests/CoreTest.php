@@ -54,7 +54,7 @@ final class CoreTest extends TestCase
         self::assertStringContainsString('<main class="contrast-example">', $response->getContent());
         self::assertStringContainsString('<title>Example</title>', $response->getContent());
         self::assertSame('contrast', $core->themes()->active()->id);
-        self::assertSame('default', $core->themes()->administration()->id);
+        self::assertSame('admin_theme', $core->themes()->administration()->id);
     }
 
     public function testMissingActiveThemeFailsBoot(): void

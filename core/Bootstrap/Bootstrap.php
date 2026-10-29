@@ -15,6 +15,8 @@ use Framework\Entity\EntityTypeRegistry;
 use Framework\Field\FieldTypeRegistry;
 use Framework\Field\WidgetRegistry;
 use Framework\Field\FormatterRegistry;
+use Framework\Security\PermissionRegistry;
+use Framework\Security\RequestSecurityInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Framework\Http\HttpKernel;
@@ -30,6 +32,9 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Yaml\Yaml;
 
@@ -93,7 +98,7 @@ final class Bootstrap
                 throw new \InvalidArgumentException("Extension ID shared by module and theme: {$module->id}");
             }
         }
-        $lineage = array_reverse($themes->activeLineage());
+        $lineage = array_values(array_unique([...array_reverse($themes->activeLineage()), ...array_reverse($themes->administrationLineage())], SORT_REGULAR));
         $libraries = new LibraryRegistry($this->rootPath, $enabled, $lineage);
         $resolver = new LibraryResolver($libraries);
         $resolver->resolve(array_keys($libraries->all()));
@@ -101,9 +106,15 @@ final class Bootstrap
         $assets->prepare();
         $assets->reset();
         $templates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $assets, $workspace);
+        $adminAssets = new AssetManager($resolver, $themes->administrationLibraries());
+        $adminTemplates = new TemplateManager($this->rootPath, $themes, $enabled, $config['twig_cache'], $adminAssets, $workspace, true);
+        $permissions = new PermissionRegistry($enabled);
 
         $container = new ContainerBuilder();
+        $container->setParameter('framework.workspace', $workspace);
+        $container->setParameter('framework.enabled_module_paths', array_column(array_map(static fn (Module $module): array => ['id' => $module->id, 'path' => $module->path], $enabled), 'path', 'id'));
         $container->set(ConfigManager::class, $configuration);
+        $container->set(PermissionRegistry::class, $permissions);
         $container->set(EntityTypeRegistry::class, new EntityTypeRegistry());
         $fieldTypes = new Definition(FieldTypeRegistry::class);
         $fieldTypes->setPublic(true);
@@ -115,6 +126,7 @@ final class Bootstrap
         $formatters->setPublic(true);
         $container->setDefinition(FormatterRegistry::class, $formatters);
         $container->set(TemplateManager::class, $templates);
+        $container->set('admin.templates', $adminTemplates);
         $container->set(AssetManager::class, $assets);
         $container->set(DatabaseRegistry::class, $databases);
         foreach ($databases->all() as $name => $manager) {
@@ -138,6 +150,8 @@ final class Bootstrap
             }
         }
         $routes = new RouteCollection();
+        $urlGenerator = new UrlGenerator($routes, new RequestContext());
+        $container->set(UrlGeneratorInterface::class, $urlGenerator);
 
         foreach ($enabled as $module) {
             $servicesPath = $module->path . '/config/services.yaml';
@@ -147,7 +161,7 @@ final class Bootstrap
 
             $routesPath = $module->path . '/config/routes.yaml';
             if (is_file($routesPath)) {
-                $this->loadRoutes($routes, $routesPath);
+                $this->loadRoutes($routes, $routesPath, $permissions);
             }
         }
 
@@ -177,7 +191,8 @@ final class Bootstrap
         $this->configuration = $configuration;
         $this->container = $container;
         $this->workspace = $workspace;
-        $this->kernel = new HttpKernel($routes, $container, $assets, $databases);
+        $security = $container->has(RequestSecurityInterface::class) ? $container->get(RequestSecurityInterface::class) : null;
+        $this->kernel = new HttpKernel($routes, $container, $assets, $databases, $security);
     }
 
     public function kernel(?Request $request = null): HttpKernel
@@ -258,7 +273,7 @@ final class Bootstrap
         return $this->container;
     }
 
-    private function loadRoutes(RouteCollection $routes, string $path): void
+    private function loadRoutes(RouteCollection $routes, string $path, PermissionRegistry $permissions): void
     {
         $definitions = Yaml::parseFile($path);
         if (!is_array($definitions)) {
@@ -275,9 +290,16 @@ final class Bootstrap
             $routePath = $definition['path'] ?? null;
             $controller = $definition['controller'] ?? null;
             $methods = $definition['methods'] ?? null;
+            $access = $definition['access'] ?? null;
             $requirements = $definition['requirements'] ?? [];
-            if (!is_string($routePath) || !str_starts_with($routePath, '/') || !is_string($controller) || $controller === '' || !is_array($methods) || !array_is_list($methods) || $methods === [] || !is_array($requirements) || array_is_list($requirements) && $requirements !== [] || array_diff(array_keys($definition), ['path', 'controller', 'methods', 'requirements']) !== []) {
+            if (!is_string($routePath) || !str_starts_with($routePath, '/') || !is_string($controller) || $controller === '' || !is_array($methods) || !array_is_list($methods) || $methods === [] || !is_array($requirements) || array_is_list($requirements) && $requirements !== [] || array_diff(array_keys($definition), ['path', 'controller', 'methods', 'requirements', 'access']) !== []) {
                 throw new \InvalidArgumentException("Route {$name} needs a path, controller service and methods.");
+            }
+            if (!is_string($access) || !in_array($access, ['public', 'authenticated'], true) && !preg_match('/^permission:([a-z][a-z0-9_]*\.[a-z][a-z0-9_.]*)$/', $access, $matches)) {
+                throw new \InvalidArgumentException("Invalid or missing access rule for route {$name}.");
+            }
+            if (str_starts_with($access, 'permission:')) {
+                $permissions->require(substr($access, strlen('permission:')));
             }
             foreach ($methods as $method) {
                 if (!is_string($method) || !preg_match('/^[A-Z]+$/', $method)) {
@@ -289,7 +311,7 @@ final class Bootstrap
                     throw new \InvalidArgumentException("Invalid requirement in route {$name}.");
                 }
             }
-            $routes->add($name, new Route($routePath, ['_controller' => $controller], requirements: $requirements, methods: $methods));
+            $routes->add($name, new Route($routePath, ['_controller' => $controller, '_access' => $access], requirements: $requirements, methods: $methods));
         }
     }
 }

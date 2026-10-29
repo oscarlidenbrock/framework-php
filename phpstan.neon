@@ -5,6 +5,9 @@ parameters:
         - modules/custom/example/src
         - modules/core/content/src
         - modules/core/content/migrations
+        - modules/core/user/src
+        - modules/core/user/migrations
+        - modules/core/admin/src
         - tests
         - public
         - bin/console

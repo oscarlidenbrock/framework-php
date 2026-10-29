@@ -26,7 +26,7 @@ final class BootstrapTest extends TestCase
         file_put_contents($this->root . '/themes/core/default/templates/layouts/base.html.twig', '<html>{% block content %}{% endblock %}</html>');
         file_put_contents($this->root . '/modules/custom/fixture/module.yaml', "id: fixture\nname: Fixture\nnamespace: FixtureGreeting\nversion: 0.1.0\nrequires: []\n");
         file_put_contents($this->root . '/modules/custom/fixture/config/services.yaml', "services:\n  fixture.controller:\n    class: Module\\FixtureGreeting\\Controller\\GreetingController\n    public: true\n");
-        file_put_contents($this->root . '/modules/custom/fixture/config/routes.yaml', "fixture.index:\n  path: /fixture\n  methods: [GET]\n  controller: fixture.controller\n");
+        file_put_contents($this->root . '/modules/custom/fixture/config/routes.yaml', "fixture.index:\n  path: /fixture\n  methods: [GET]\n  controller: fixture.controller\n  access: public\n");
         file_put_contents($this->root . '/modules/custom/fixture/src/Controller/GreetingController.php', <<<'PHP'
 <?php
 declare(strict_types=1);
@@ -59,6 +59,13 @@ PHP);
     {
         file_put_contents($this->root . '/modules/custom/fixture/config/routes.yaml', "fixture.index:\n  path: /fixture\n  methods: [GET]\n  controller: fixture.controller\n  access: admin\n");
         $this->expectException(InvalidArgumentException::class);
+        (new Core($this->root, workspace: 'development'))->boot();
+    }
+
+    public function testMissingAccessRuleFailsBoot(): void
+    {
+        file_put_contents($this->root . '/modules/custom/fixture/config/routes.yaml', "fixture.index:\n  path: /fixture\n  methods: [GET]\n  controller: fixture.controller\n");
+        $this->expectExceptionMessage('Invalid or missing access rule');
         (new Core($this->root, workspace: 'development'))->boot();
     }
 

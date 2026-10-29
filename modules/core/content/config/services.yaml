@@ -5,11 +5,31 @@ services:
     public: true
   content.storage:
     class: Module\Content\Storage\ContentStorage
-    arguments: ['@content.types', '@Framework\Field\FieldTypeRegistry']
+    arguments: ['@content.types', '@Framework\Field\FieldTypeRegistry', '@content.policy']
+    public: true
+  content.policy:
+    class: Module\Content\Access\ContentPolicy
+    arguments: ['@?Framework\Security\RequestSecurityInterface']
     public: true
   content.forms:
     class: Module\Content\Form\ContentFormManager
     arguments: ['@content.types', '@content.storage', '@Framework\Field\FieldTypeRegistry', '@Framework\Field\WidgetRegistry', '@Framework\Template\TemplateManager']
+    public: true
+  content.admin_forms:
+    class: Module\Content\Form\ContentFormManager
+    arguments: ['@content.types', '@content.storage', '@Framework\Field\FieldTypeRegistry', '@Framework\Field\WidgetRegistry', '@admin.templates']
+    public: true
+  content.administration:
+    class: Module\Content\Administration\ContentAdministration
+    arguments: ['@content.types', '@content.storage', '@content.policy']
+    public: true
+  content.admin_controller:
+    class: Module\Content\Controller\AdministrationController
+    arguments: ['@content.administration', '@content.admin_forms', '@content.types', '@content.policy', '@?admin.page_renderer', '@?Framework\Security\CsrfInterface', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true
+  content.public_controller:
+    class: Module\Content\Controller\PublicController
+    arguments: ['@content.administration', '@content.views', '@Framework\Template\TemplateManager']
     public: true
   content.views:
     class: Module\Content\Display\ContentViewManager

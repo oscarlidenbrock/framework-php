@@ -1,0 +1,11 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<h1>Register</h1>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ action }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <label>Email <input name="email" type="email" required autocomplete="username"></label>
+    <label>Password <input name="password" type="password" required minlength="12" autocomplete="new-password"></label>
+    <button type="submit">Register</button>
+</form>
+{% endblock %}

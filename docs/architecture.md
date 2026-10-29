@@ -9,14 +9,14 @@
 | Configuration-based module activation | Implemented |
 | Module services and public routes | Implemented |
 | Optional module discovery cache | Implemented |
-| Theme discovery, inheritance and separate public/admin selection | Implemented; admin rendering planned |
+| Theme discovery, inheritance and separate public/admin rendering | Implemented |
 | Twig module templates, theme overrides and layouts | Implemented |
 | Twig cache and explicit CSS/JS publication | Implemented |
 | Named asset libraries, dependencies and response-local attachment | Implemented |
-| Module lifecycle commands and permissions | Planned |
+| Module permissions, route access, accounts and minimal administration | Implemented first slice; lifecycle commands planned |
 | Optional named DBAL connections, per-connection ORM and module migrations | Implemented |
 | Host-selected workspaces and recursive YAML configuration overrides | Implemented |
-| Dynamic scalar content types, system fields and DBAL CRUD | Implemented; admin UI and advanced fields planned |
+| Dynamic scalar content types, system fields and DBAL CRUD | Implemented; basic protected administration UI implemented, advanced fields planned |
 | Per-file asset HTML attributes and script placement | Implemented |
 | Theme regions, block placement and asset build pipeline | Planned |
 | Configurable content | Planned |

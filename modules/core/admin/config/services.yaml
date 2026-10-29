@@ -1,0 +1,15 @@
+services:
+  admin.navigation:
+    class: Module\Admin\Navigation
+    arguments: ['%framework.enabled_module_paths%', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface', '@Framework\Security\RequestSecurityInterface']
+  admin.page_renderer:
+    class: Module\Admin\PageRenderer
+    arguments: ['@admin.templates', '@admin.navigation', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface', '@Framework\Security\RequestSecurityInterface', '@Framework\Security\CsrfInterface', '%framework.workspace%']
+    public: true
+  admin.dashboard:
+    class: Module\Admin\Dashboard
+    arguments: ['@Framework\Security\RequestSecurityInterface']
+  admin.dashboard_controller:
+    class: Module\Admin\Controller\DashboardController
+    arguments: ['@admin.dashboard', '@admin.page_renderer']
+    public: true

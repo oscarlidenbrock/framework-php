@@ -1,0 +1,4 @@
+content:
+  label: Content
+  route: content.admin.index
+  permission: content.view_admin

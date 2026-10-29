@@ -24,15 +24,17 @@ final class TemplateManager
         bool $cache,
         private readonly AssetManager $assets,
         string $workspace = 'default',
+        bool $administration = false,
     ) {
         $loader = new FilesystemLoader();
-        foreach ($themes->activeLineage() as $theme) {
+        $lineage = $administration ? $themes->administrationLineage() : $themes->activeLineage();
+        foreach ($lineage as $theme) {
             if (is_dir($theme->path . '/templates')) {
                 $loader->addPath($theme->path . '/templates', 'theme');
             }
         }
         foreach ($enabledModules as $module) {
-            foreach ($themes->activeLineage() as $theme) {
+            foreach ($lineage as $theme) {
                 $override = $theme->path . '/templates/modules/' . $module->id;
                 if (is_dir($override)) {
                     $loader->addPath($override, $module->id);

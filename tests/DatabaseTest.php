@@ -238,7 +238,7 @@ final class DatabaseTest extends TestCase
         $container = new ContainerBuilder();
         $container->set('record.controller', $controller);
         $routes = new RouteCollection();
-        $routes->add('record', new Route('/record', ['_controller' => 'record.controller'], methods: ['GET']));
+        $routes->add('record', new Route('/record', ['_controller' => 'record.controller', '_access' => 'public'], methods: ['GET']));
         $assets = new AssetManager(new LibraryResolver(new LibraryRegistry($this->root, [], [])), []);
         $kernel = new HttpKernel($routes, $container, $assets, $registry);
         self::assertSame('stored', $kernel->handle(Request::create('/record'))->getContent());
@@ -255,7 +255,7 @@ final class DatabaseTest extends TestCase
         $container = new ContainerBuilder();
         $container->set('database.controller', $controller);
         $routes = new RouteCollection();
-        $routes->add('database', new Route('/database', ['_controller' => 'database.controller'], methods: ['GET']));
+        $routes->add('database', new Route('/database', ['_controller' => 'database.controller', '_access' => 'public'], methods: ['GET']));
         $assets = new AssetManager(new LibraryResolver(new LibraryRegistry($this->root, [], [])), []);
         $response = (new HttpKernel($routes, $container, $assets, $registry))->handle(Request::create('/database'));
 

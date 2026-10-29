@@ -1,9 +1,9 @@
 <div class="content-field">
     <label for="content-{{ name }}">{{ label }}</label>
     {% if control == 'textarea' %}
-        <textarea id="content-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}>{{ value ?? '' }}</textarea>
+        <textarea id="content-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}{% if error is not null %} aria-invalid="true" aria-describedby="content-{{ name }}-error"{% endif %}>{{ value ?? '' }}</textarea>
     {% else %}
-        <input id="content-{{ name }}" name="{{ name }}" type="{{ control }}"{% if control == 'checkbox' %} value="1"{% if value %} checked{% endif %}{% elseif value is not null %} value="{{ value }}"{% endif %}{% if step is not null %} step="{{ step }}"{% endif %}{% if maxlength is not null %} maxlength="{{ maxlength }}"{% endif %}{% if required %} required{% endif %}>
+        <input id="content-{{ name }}" name="{{ name }}" type="{{ control }}"{% if control == 'checkbox' %} value="1"{% if value %} checked{% endif %}{% elseif value is not null %} value="{{ value }}"{% endif %}{% if step is not null %} step="{{ step }}"{% endif %}{% if maxlength is not null %} maxlength="{{ maxlength }}"{% endif %}{% if required %} required{% endif %}{% if error is not null %} aria-invalid="true" aria-describedby="content-{{ name }}-error"{% endif %}>
     {% endif %}
-    {% if error is not null %}<span class="field-error">{{ error }}</span>{% endif %}
+    {% if error is not null %}<span id="content-{{ name }}-error" class="field-error">{{ error }}</span>{% endif %}
 </div>

@@ -1,0 +1,35 @@
+content.admin.index:
+  path: /admin/content
+  methods: [GET]
+  controller: content.admin_controller
+  access: permission:content.view_admin
+content.admin.list:
+  path: /admin/content/{type}
+  methods: [GET]
+  controller: content.admin_controller
+  access: permission:content.view_admin
+  requirements: {type: '[a-z][a-z0-9_]*'}
+content.admin.create:
+  path: /admin/content/{type}/new
+  methods: [GET, POST]
+  controller: content.admin_controller
+  access: permission:content.create
+  requirements: {type: '[a-z][a-z0-9_]*'}
+content.admin.edit:
+  path: /admin/content/{type}/{id}/edit
+  methods: [GET, POST]
+  controller: content.admin_controller
+  access: authenticated
+  requirements: {type: '[a-z][a-z0-9_]*', id: '\d+'}
+content.admin.delete:
+  path: /admin/content/{type}/{id}/delete
+  methods: [GET, POST]
+  controller: content.admin_controller
+  access: authenticated
+  requirements: {type: '[a-z][a-z0-9_]*', id: '\d+'}
+content.public.show:
+  path: /content/{type}/{id}
+  methods: [GET]
+  controller: content.public_controller
+  access: public
+  requirements: {type: '[a-z][a-z0-9_]*', id: '\d+'}

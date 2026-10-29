@@ -1,0 +1,15 @@
+user.login:
+  path: /login
+  methods: [GET, POST]
+  controller: user.login_controller
+  access: public
+user.register:
+  path: /register
+  methods: [GET, POST]
+  controller: user.register_controller
+  access: public
+user.logout:
+  path: /logout
+  methods: [POST]
+  controller: user.logout_controller
+  access: authenticated

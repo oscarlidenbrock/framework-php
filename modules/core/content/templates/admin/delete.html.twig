@@ -1,0 +1,13 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ back_url }}">Back to content</a></p>
+<h1>Delete content</h1>
+<div class="admin-card">
+    <p>Delete “{{ title }}”? This action cannot be undone.</p>
+    <form method="post" action="{{ action }}">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <button class="button danger" type="submit">Confirm deletion</button>
+        <a class="button secondary" href="{{ back_url }}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

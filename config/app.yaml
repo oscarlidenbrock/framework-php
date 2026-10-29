@@ -1,7 +1,10 @@
 enabled_modules:
+  - admin
+  - user
+  - content
   - example
 module_discovery_cache: false
 active_theme: default
-admin_theme: default
+admin_theme: admin_theme
 theme_discovery_cache: false
 twig_cache: false

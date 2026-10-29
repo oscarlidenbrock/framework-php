@@ -1,0 +1,9 @@
+id: user
+name: User
+namespace: User
+version: 0.1.0
+requires: []
+database:
+  migrations:
+    '*':
+      Module\User\Migrations: migrations

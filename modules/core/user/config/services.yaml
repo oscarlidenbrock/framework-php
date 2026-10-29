@@ -1,0 +1,31 @@
+services:
+  user.accounts:
+    class: Module\User\AccountManager
+    arguments: ['@Framework\Database\DatabaseRegistry', '@Framework\Config\ConfigManager', '@Framework\Security\PermissionRegistry']
+    public: true
+  user.security:
+    class: Module\User\SecurityManager
+    arguments: ['@user.accounts', '%framework.workspace%']
+    public: true
+  user.roles:
+    class: Module\User\RoleManager
+    arguments: ['@user.accounts', '@Framework\Security\PermissionRegistry', '@Framework\Security\RequestSecurityInterface']
+    public: true
+  Framework\Security\RequestSecurityInterface:
+    alias: user.security
+    public: true
+  Framework\Security\CsrfInterface:
+    alias: user.security
+    public: true
+  user.login_controller:
+    class: Module\User\Controller\LoginController
+    arguments: ['@user.security', '@Framework\Template\TemplateManager', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true
+  user.register_controller:
+    class: Module\User\Controller\RegisterController
+    arguments: ['@user.accounts', '@user.security', '@Framework\Template\TemplateManager', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true
+  user.logout_controller:
+    class: Module\User\Controller\LogoutController
+    arguments: ['@user.security', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true

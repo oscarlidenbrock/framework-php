@@ -1,0 +1,25 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<p><a href="{{ types_url }}">Content types</a></p>
+<div class="admin-toolbar">
+    <h1>{{ label }}</h1>
+    {% if new_url %}<a class="button" href="{{ new_url }}">Add content</a>{% endif %}
+</div>
+{% if notice %}<p class="admin-notice" role="status">{{ notice }}</p>{% endif %}
+<div class="admin-card admin-table-wrap">
+    {% if rows is empty %}<p>No content yet.</p>{% else %}
+    <table class="admin-table">
+        <thead><tr><th scope="col">Title</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <tbody>{% for row in rows %}<tr>
+            <th scope="row">{{ row.title }}</th>
+            <td>{{ row.published ? 'Published' : 'Draft' }}</td>
+            <td><div class="admin-actions">
+                {% if row.view_url %}<a href="{{ row.view_url }}">View</a>{% endif %}
+                {% if row.edit_url %}<a href="{{ row.edit_url }}">Edit</a>{% endif %}
+                {% if row.delete_url %}<a href="{{ row.delete_url }}">Delete</a>{% endif %}
+            </div></td>
+        </tr>{% endfor %}</tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

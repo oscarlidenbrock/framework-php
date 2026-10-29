@@ -2,3 +2,4 @@ example.index:
   path: /example
   methods: [GET]
   controller: example.controller
+  access: public

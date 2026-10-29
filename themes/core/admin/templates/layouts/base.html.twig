@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administration</title>
+    {{ assets_css() }}
+    {{ assets_js('head') }}
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Administration">
+            <a class="admin-brand" href="{{ dashboard_url }}"><span class="admin-brand-mark" aria-hidden="true">F</span><span>Framework <small>Admin</small></span></a>
+            <p class="admin-nav-heading">Manage</p>
+            <nav aria-label="Main navigation">
+                {% for item in navigation %}
+                    <a href="{{ item.url }}"><span class="admin-nav-icon" aria-hidden="true">{{ item.label|slice(0, 1)|upper }}</span><span>{{ item.label }}</span></a>
+                {% endfor %}
+            </nav>
+        </aside>
+        <div class="admin-workspace">
+            <header class="admin-topbar">
+                <span class="admin-topbar-label">Site administration</span>
+                <div class="admin-topbar-actions">
+                    <span class="admin-workspace-label">{{ workspace }}</span>
+                    {% if account_email %}<span class="admin-account-email">{{ account_email }}</span>{% endif %}
+                    <form method="post" action="{{ logout_action }}">
+                        <input type="hidden" name="_csrf" value="{{ logout_csrf }}">
+                        <button class="admin-signout" type="submit">Sign out</button>
+                    </form>
+                </div>
+            </header>
+            <main id="main-content" class="admin-main" tabindex="-1">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {{ assets_js('body') }}
+</body>
+</html>

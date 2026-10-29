@@ -1,6 +1,6 @@
 # Framework
 
-A standalone PHP modular framework. The runtime discovers modules and themes, builds a service container, matches HTTP routes, renders HTML with Twig, and offers optional multi-connection Doctrine persistence. It does not yet provide authentication or an administration UI.
+A standalone PHP modular framework. The runtime discovers modules and themes, builds a service container, matches HTTP routes, renders HTML with Twig, and offers optional multi-connection Doctrine persistence. Core modules provide authentication and an initial content administration UI.
 
 ## Requirements and local run
 
@@ -26,11 +26,13 @@ For Apache, set `DocumentRoot` to `public/`, enable `mod_rewrite`, and allow `.h
 
 `config/app.yaml` lists enabled module IDs and selects `active_theme` and `admin_theme`. The example module is enabled by default. Set `active_theme: contrast` to see the child theme override its page; set it back to `default` to use the module template. Disabling the module leaves it discoverable but makes `/example` return 404.
 
-`config/workspaces.yaml` maps HTTP hostnames to workspace directories. The included `development` workspace accepts `localhost` and `127.0.0.1`. CLI commands require `APP_WORKSPACE` or `--workspace`. See [docs/workspaces.md](docs/workspaces.md) before adding deployment hostnames or overrides.
+`config/workspaces.yaml` maps HTTP hostnames to workspace directories. The included `development` workspace accepts `framework.dev`. CLI commands require `APP_WORKSPACE` or `--workspace`. See [docs/workspaces.md](docs/workspaces.md) before adding deployment hostnames or overrides.
 
 Persistence is optional. To configure it, copy `config/database.example.yaml` to ignored `config/database.yaml` and set the named environment variables outside the repository. See [docs/database.md](docs/database.md) for DBAL and ORM APIs, module mappings, and per-connection migration commands.
 
-The optional `content` module adds dynamic scalar content types. Enable it in `enabled_modules` after configuring a database, apply its migration, then create types and synchronize field changes explicitly. See [docs/content.md](docs/content.md) for the Article example, CLI commands, storage API and current limits.
+The optional `content` module adds dynamic scalar content types. Enable it in `enabled_modules` after configuring a database, apply its migration, then create types and synchronize field changes explicitly. With `user` and `admin` enabled, authorized users can manage applied types at `/admin/content`; published records are readable at `/content/{type}/{id}`. See [docs/content.md](docs/content.md) for the Article example, CLI commands, storage API and current limits.
+
+The optional `user` and `admin` modules add login, registration (disabled by default), an explicit first administrator command, and a protected `/admin` dashboard. See [docs/security.md](docs/security.md) before enabling them.
 
 `module_discovery_cache` and `theme_discovery_cache` store validated discovery data in `storage/cache/`. `twig_cache: true` stores compiled Twig templates there. Use these settings in production; remove the corresponding cache directories after deployments that preserve timestamps or change templates while auto reload is disabled.
 
@@ -43,4 +45,4 @@ composer validate
 
 See [docs/modules.md](docs/modules.md) for module services and routes, [docs/themes.md](docs/themes.md) for themes and Twig overrides, [docs/assets.md](docs/assets.md) for mandatory asset libraries, [docs/workspaces.md](docs/workspaces.md) for configuration inheritance, and [docs/architecture.md](docs/architecture.md) for feature status.
 
-Content forms and Twig views can be built from dynamic Field Definitions through the `content.forms` and `content.views` services. The service-only Form API has no public write route; see [docs/content.md](docs/content.md) for usage and current security limits.
+Content forms and Twig views are built from dynamic Field Definitions through the `content.forms` and `content.views` services. Public content writes remain unavailable; see [docs/content.md](docs/content.md) for usage and current security limits.

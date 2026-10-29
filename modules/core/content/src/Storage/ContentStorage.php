@@ -7,6 +7,7 @@ namespace Module\Content\Storage;
 use Framework\Entity\EntityStorageInterface;
 use Framework\Field\FieldDefinition;
 use Framework\Field\FieldTypeRegistry;
+use Module\Content\Access\ContentPolicy;
 use Module\Content\ContentType\ContentTypeManager;
 
 final class ContentStorage implements EntityStorageInterface
@@ -14,12 +15,19 @@ final class ContentStorage implements EntityStorageInterface
     public function __construct(
         private readonly ContentTypeManager $types,
         private readonly FieldTypeRegistry $fieldTypes,
+        private readonly ?ContentPolicy $policy = null,
     ) {
     }
 
     /** @param array<string, mixed> $values */
     public function create(string $type, array $values, ?string $connection = null): ContentRecord
     {
+        if ($this->policy?->inRequest()) {
+            $this->policy->require('content.create');
+            if (($values['published'] ?? false) !== false) {
+                $this->policy->require('content.publish');
+            }
+        }
         $definition = $this->types->requireType($type, $connection);
         $fields = $this->types->fields($type, $definition->connection);
         foreach ($values as $name => $value) {
@@ -31,7 +39,7 @@ final class ContentStorage implements EntityStorageInterface
         foreach ($fields as $field) {
             $filled[$field->name] = array_key_exists($field->name, $values) ? $values[$field->name] : $field->default;
         }
-        $filled['owner'] = 0;
+        $filled['owner'] = $this->policy?->inRequest() ? ($this->policy->identityId() ?? 0) : 0;
         $filled['created_at'] = null;
         $filled['updated_at'] = null;
 
@@ -53,10 +61,20 @@ final class ContentStorage implements EntityStorageInterface
         if ($record->id() !== null && $existing === null) {
             throw new \InvalidArgumentException('Content record no longer exists.');
         }
+        if ($this->policy?->inRequest()) {
+            if ($existing === null) {
+                $this->policy->require('content.create');
+            } else {
+                $this->policy->requireEdit($existing);
+            }
+            if (($values['published'] ?? false) !== ($existing?->get('published') ?? false)) {
+                $this->policy->require('content.publish');
+            }
+        }
         if ($existing === null) {
             $values['created_at'] = $now;
             $values['updated_at'] = $now;
-            $values['owner'] = 0;
+            $values['owner'] = $this->policy?->inRequest() ? ($this->policy->identityId() ?? 0) : 0;
         } else {
             if ($values['owner'] !== $existing->get('owner') || $values['created_at'] != $existing->get('created_at')) {
                 throw new \InvalidArgumentException('Owner and creation time cannot be changed.');
@@ -141,6 +159,13 @@ final class ContentStorage implements EntityStorageInterface
         $this->assertSchemaReady($record->type, $record->connection);
         if ($record->id() === null) {
             throw new \InvalidArgumentException('Cannot delete unsaved content.');
+        }
+        if ($this->policy?->inRequest()) {
+            $existing = $this->find($record->type, $record->id(), $record->connection);
+            if ($existing === null) {
+                throw new \InvalidArgumentException('Content record no longer exists.');
+            }
+            $this->policy->requireDelete($existing);
         }
         $database = $this->types->database($record->connection);
         $database->execute('DELETE FROM ' . $database->connection()->quoteIdentifier(ContentTypeManager::dataTable($record->type)) . ' WHERE id = :id', ['id' => $record->id()]);

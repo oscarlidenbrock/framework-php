@@ -1,0 +1,3 @@
+users:
+  connection: default
+  registration_enabled: false

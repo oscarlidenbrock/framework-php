@@ -246,7 +246,7 @@ Define a single template namespace and override strategy; test its lookup order 
 
 ### Implemented theme and template rules
 
-- `active_theme` and `admin_theme` in `config/app.yaml` select public and administration themes separately. Administration rendering is not implemented yet.
+- `active_theme` and `admin_theme` in `config/app.yaml` select public and administration themes separately. The `admin` module provides the administrative layout and extensible sidebar navigation; the `content` module owns content administration pages.
 - A theme declares `id`, `name`, `namespace`, `version`, optional `parent`, and global library IDs under `libraries` in `theme.yaml`. Discovery validates IDs, namespaces and the complete parent graph before selection. `Theme\{Namespace}\` is registered with Composer for the theme's optional `src/` directory.
 - Twig uses `@theme/...` for active-theme templates, falling back through parent themes. A module's `@{module_id}/...` searches the active theme's `templates/modules/{module_id}/`, then the same directory in each parent, then the enabled module's own `templates/` directory. The module ID `theme` is reserved for Twig's `@theme` namespace.
 - Controllers may receive `Framework\Template\TemplateManager` through the container and return its HTML `Response`. Existing controllers returning a `Response` directly remain supported.
@@ -331,6 +331,8 @@ Planned areas:
 For MVP, implement working vertical slices before rich UI: a small authenticated admin screen, one entity/content type, basic field editing, list/edit forms, access checks and theme rendering. Never build a complex visual editor before the underlying API and persistence are tested.
 
 ## 10. Authentication, authorization and security
+
+The first security slice is implemented by the `user` and `admin` core modules. Enabled modules declare unique permissions in `config/permissions.yaml`. Every YAML route declares `access: public`, `authenticated`, or `permission:<id>`; malformed or missing rules fail boot. The kernel checks access before controller invocation and protected operations repeat authorization. The `user` module owns accounts, role grants, DB-backed sessions, CSRF and login throttling. The reserved `administrator` role receives currently declared permissions; ordinary roles use explicit grants. The `admin` module owns the dashboard, layout and navigation, rendered with `admin_theme`. Public registration is disabled by default, and first-admin creation is an explicit CLI operation. The `content` module owns protected administration CRUD routes and a read-only public route for published records. Content operation permissions, ownership and publication checks apply in services as well as routes; HTTP storage receives the trusted identity through a core contract. See `docs/security.md`, `docs/content.md` and ADRs 0010–0012.
 
 Use explicit authentication and authorization contracts. Role-based access control (RBAC) is a core CMS capability, with granular permission names registered by modules (for example, `content.article.create`, `content.article.edit_own`, `users.manage`).
 

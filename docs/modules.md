@@ -42,9 +42,10 @@ hello.index:
   path: /hello
   methods: [GET]
   controller: hello.controller
+  access: public
 ```
 
-Optional `requirements` constrain path parameters. Unknown route keys fail boot. Authorization is not yet implemented; do not expose protected operations. Controllers are invokable services accepting a `Request` and returning a `Response`. Services and routes are loaded only for enabled modules before container compilation.
+Optional `requirements` constrain path parameters. Every route requires `access: public`, `access: authenticated` or `access: permission:<declared-id>`. Modules declare permission IDs in `config/permissions.yaml`; unknown IDs and malformed rules fail boot. Protected operations must repeat authorization in their services. See [security.md](security.md). Controllers are invokable services accepting a `Request` and returning a `Response`. Services and routes are loaded only for enabled modules before container compilation.
 
 For HTML, inject `Framework\Template\TemplateManager` and call `renderResponse('@hello/index.html.twig', ['libraries' => ['hello/page']], ['title' => 'Hello'])`. The second argument attaches library IDs, the third supplies Twig variables, and an optional fourth sets status. Controllers or services may also inject `Framework\Asset\AssetManager` and call `attachLibrary()` before rendering. Direct CSS/JS lists are rejected.
 

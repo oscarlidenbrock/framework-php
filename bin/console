@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use Framework\Core;
 use Module\Content\ContentType\ContentTypeManager;
+use Module\User\AccountManager;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -35,14 +36,14 @@ foreach (array_slice($arguments, 1) as $argument) {
 }
 $command ??= 'help';
 if ($command === 'help') {
-    echo "Usage: php bin/console [--workspace=name] module:list|theme:list|database:status|database:migrate|content:type:list|content:type:create|content:field:list|content:field:add|content:field:update|content:schema:status|content:schema:diff|content:schema:apply [arguments] [--connection=name] [--yes]\n";
+    echo "Usage: php bin/console [--workspace=name] module:list|theme:list|database:status|database:migrate|content:type:list|content:type:create|content:field:list|content:field:add|content:field:update|content:schema:status|content:schema:diff|content:schema:apply|user:create-admin [arguments] [--connection=name] [--yes]\n";
     exit(0);
 }
-if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate', 'content:type:list', 'content:type:create', 'content:field:list', 'content:field:add', 'content:field:update', 'content:schema:status', 'content:schema:diff', 'content:schema:apply'], true)) {
+if (!in_array($command, ['module:list', 'module:publish-assets', 'theme:list', 'theme:publish-assets', 'database:status', 'database:validate', 'database:migrate', 'content:type:list', 'content:type:create', 'content:field:list', 'content:field:add', 'content:field:update', 'content:schema:status', 'content:schema:diff', 'content:schema:apply', 'user:create-admin'], true)) {
     fwrite(STDERR, "Unknown command: {$command}\n");
     exit(2);
 }
-if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') && !str_starts_with($command, 'content:') || $confirmed && !in_array($command, ['database:migrate', 'content:schema:apply'], true) || $fieldOptions !== [] && !in_array($command, ['content:field:add', 'content:field:update'], true) || $positionals !== [] && !str_starts_with($command, 'content:')) {
+if ($workspace === '' || $connectionName === '' || $connectionName !== null && !str_starts_with($command, 'database:') && !str_starts_with($command, 'content:') || $confirmed && !in_array($command, ['database:migrate', 'content:schema:apply'], true) || $fieldOptions !== [] && !in_array($command, ['content:field:add', 'content:field:update'], true) || $positionals !== [] && !str_starts_with($command, 'content:') && $command !== 'user:create-admin') {
     fwrite(STDERR, "Invalid command option.\n");
     exit(2);
 }
@@ -81,6 +82,29 @@ try {
         $database->connection()->getNativeConnection();
         $core->databases()->validateMappings();
         echo $database->name . "\tvalid\n";
+    } elseif ($command === 'user:create-admin') {
+        if (count($positionals) !== 1) {
+            throw new InvalidArgumentException('user:create-admin expects one email address.');
+        }
+        $password = getenv('APP_ADMIN_PASSWORD');
+        if (!is_string($password) || $password === '') {
+            throw new InvalidArgumentException('APP_ADMIN_PASSWORD must be set for user:create-admin.');
+        }
+        if (strlen($password) < 12) {
+            throw new InvalidArgumentException('APP_ADMIN_PASSWORD must contain at least 12 characters.');
+        }
+        if (!filter_var($positionals[0], FILTER_VALIDATE_EMAIL) || strlen($positionals[0]) > 255) {
+            throw new InvalidArgumentException('user:create-admin needs a valid email address.');
+        }
+        if (!$core->container()->has('user.accounts')) {
+            throw new LogicException('Enable the user and admin modules before creating the first administrator.');
+        }
+        $accounts = $core->container()->get('user.accounts');
+        if (!$accounts instanceof AccountManager) {
+            throw new LogicException('User module is not enabled.');
+        }
+        $account = $accounts->createFirstAdministrator($positionals[0], $password);
+        echo $account->email() . "\tcreated\n";
     } elseif (str_starts_with($command, 'content:')) {
         $types = $core->container()->get('content.types');
         if (!$types instanceof ContentTypeManager) {

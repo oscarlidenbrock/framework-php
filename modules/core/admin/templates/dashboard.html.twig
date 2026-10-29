@@ -1,0 +1,40 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<div class="admin-page-heading">
+    <div>
+        <p class="admin-eyebrow">Overview</p>
+        <h1>Dashboard</h1>
+        <p class="admin-lead">Manage your site from one place.</p>
+    </div>
+</div>
+
+<section class="admin-panel" aria-labelledby="quick-access-title">
+    <div class="admin-panel-heading">
+        <div>
+            <p class="admin-eyebrow">Your workspace</p>
+            <h2 id="quick-access-title">Quick access</h2>
+        </div>
+    </div>
+    <div class="admin-quick-grid">
+        {% set sections = navigation|filter(item => item.url != dashboard_url) %}
+        {% for item in sections %}
+            <a class="admin-quick-card" href="{{ item.url }}">
+                <span class="admin-quick-icon" aria-hidden="true">{{ item.label|slice(0, 1)|upper }}</span>
+                <span class="admin-quick-copy"><strong>{{ item.label }}</strong><small>Open {{ item.label|lower }}</small></span>
+                <span class="admin-quick-arrow" aria-hidden="true">→</span>
+            </a>
+        {% else %}
+            <p class="admin-empty">Administration sections will appear here when your account has access to them.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="admin-panel admin-account-panel" aria-labelledby="account-title">
+    <div>
+        <p class="admin-eyebrow">Signed in</p>
+        <h2 id="account-title">Your account</h2>
+        <p class="admin-muted">{{ email }}</p>
+    </div>
+    <span class="admin-status">Active session</span>
+</section>
+{% endblock %}
