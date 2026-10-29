@@ -91,7 +91,7 @@ final class ModuleManagerTest extends TestCase
         $path = $this->module('custom', 'first', 'CachedFirst');
         $manager = new ModuleManager($this->root, $this->loader(), true);
         self::assertCount(1, $manager->discover());
-        self::assertFileExists($this->root . '/storage/cache/modules.json');
+        self::assertFileExists($this->root . '/var/cache/default/modules.json');
 
         file_put_contents($path . '/module.yaml', "id: first\nname: first\nnamespace: CachedFirst\nversion: 0.1.0\nrequires: [missing]\n");
         $fresh = new ModuleManager($this->root, $this->loader(), true);

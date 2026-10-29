@@ -8,6 +8,7 @@ use Framework\Asset\AssetManager;
 use Framework\Database\DatabaseRegistry;
 use Framework\Security\AccessDeniedException;
 use Framework\Security\RequestSecurityInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,6 +26,7 @@ final class HttpKernel
         private readonly AssetManager $assets,
         private readonly ?DatabaseRegistry $databases = null,
         private readonly ?RequestSecurityInterface $security = null,
+        private readonly ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -36,7 +38,8 @@ final class HttpKernel
             $response = $this->dispatch($request);
             $this->security?->finish($response, $request);
             return $response;
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $this->logUnexpected($exception);
             return new Response('Internal Server Error', Response::HTTP_INTERNAL_SERVER_ERROR);
         } finally {
             $this->assets->reset();
@@ -80,9 +83,15 @@ final class HttpKernel
             return $response;
         } catch (AccessDeniedException) {
             return new Response('Forbidden', Response::HTTP_FORBIDDEN);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $this->logUnexpected($exception);
             return new Response('Internal Server Error', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private function logUnexpected(\Throwable $exception): void
+    {
+        $this->logger?->error('Unexpected HTTP error', ['exception_class' => $exception::class]);
     }
 
     private function allowed(mixed $access): bool

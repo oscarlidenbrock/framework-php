@@ -59,6 +59,18 @@ final class InstallationSelectionTest extends TestCase
         self::assertSame(1, $this->command('module:enable addon', workspace: 'testing')[0]);
     }
 
+    public function testBootstrapUsesWorkspaceSnapshotSelection(): void
+    {
+        (new InstallationSnapshot($this->root, 'testing'))->write([
+            'enabled_modules' => ['user', 'admin', 'site', 'example'],
+            'active_theme' => 'admin_theme',
+            'admin_theme' => 'admin_theme',
+        ]);
+        $next = $this->nextCore('testing');
+        self::assertSame('admin_theme', $next->themes()->active()->id);
+        self::assertFileExists($this->root . '/var/cache/testing/installation.json');
+    }
+
     public function testDependenciesSnapshotAndWorkspaceIsolation(): void
     {
         $this->createAddonMigration();
@@ -87,6 +99,7 @@ final class InstallationSelectionTest extends TestCase
         self::assertSame(0, $this->command('module:migrate addon --yes', workspace: 'testing')[0]);
         self::assertTrue($this->core->database()->connection()->createSchemaManager()->tablesExist(['addon_probe']));
         $manager->enable('addon');
+        self::assertStringContainsString('Module enabled', file_get_contents($this->root . '/var/logs/testing/site.log'));
         self::assertSame(['user', 'admin', 'site', 'example'], array_map(static fn ($module): string => $module->id, $this->core->enabledModules()));
         $next = $this->nextCore('testing');
         self::assertContains('addon', array_map(static fn ($module): string => $module->id, $next->enabledModules()));
@@ -107,6 +120,8 @@ final class InstallationSelectionTest extends TestCase
         $secondManager = $this->nextCore('second')->container()->get('site.installation');
         self::assertInstanceOf(InstallationManager::class, $secondManager);
         $secondManager->selectTheme('public', 'admin_theme');
+        self::assertStringContainsString('Theme selected', file_get_contents($this->root . '/var/logs/second/site.log'));
+        self::assertStringNotContainsString('Theme selected', file_get_contents($this->root . '/var/logs/testing/site.log'));
         self::assertSame('admin_theme', $this->nextCore('second')->themes()->active()->id);
         self::assertSame('default', $this->nextCore('testing')->themes()->active()->id);
         self::assertSame(3, count($this->core->database()->query("SELECT setting_key FROM config WHERE workspace = 'testing' AND setting_key LIKE 'installation.%'")));

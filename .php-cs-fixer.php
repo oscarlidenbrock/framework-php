@@ -7,6 +7,7 @@ $finder = PhpCsFixer\Finder::create()
     ->append([__DIR__ . '/bin/console']);
 
 return (new PhpCsFixer\Config())
+    ->setCacheFile(__DIR__ . '/var/cache/_tools/php-cs-fixer.cache')
     ->setRules(['@PSR12' => true, 'declare_strict_types' => true])
     ->setRiskyAllowed(true)
     ->setFinder($finder);

@@ -13,6 +13,7 @@ use Framework\Database\DatabaseRegistry;
 use Framework\Module\ModuleManager;
 use Framework\Security\RequestSecurityInterface;
 use Framework\Theme\ThemeManager;
+use Framework\Log\LoggerFactory;
 
 final class InstallationManager
 {
@@ -26,6 +27,7 @@ final class InstallationManager
         private readonly ModuleManager $modules,
         private readonly ThemeManager $themes,
         private readonly ?RequestSecurityInterface $security = null,
+        private readonly ?LoggerFactory $logs = null,
     ) {
     }
 
@@ -65,6 +67,7 @@ final class InstallationManager
         $candidate = $this->selection;
         $candidate['enabled_modules'][] = $id;
         $this->persist($candidate, true);
+        $this->logs?->channel('site')->notice('Module enabled', ['module' => $id]);
     }
 
     public function disable(string $id): void
@@ -79,6 +82,7 @@ final class InstallationManager
         $candidate = $this->selection;
         $candidate['enabled_modules'] = array_values(array_filter($candidate['enabled_modules'], static fn (string $enabled): bool => $enabled !== $id));
         $this->persist($candidate, false);
+        $this->logs?->channel('site')->notice('Module disabled', ['module' => $id]);
     }
 
     public function selectTheme(string $kind, string $id): void
@@ -92,6 +96,7 @@ final class InstallationManager
         $candidate = $this->selection;
         $candidate[$key] = $id;
         $this->persist($candidate, false);
+        $this->logs?->channel('site')->notice('Theme selected', ['kind' => $kind, 'theme' => $id]);
     }
 
     /** Rebuild the snapshot after an out-of-band repair to the persisted rows. */

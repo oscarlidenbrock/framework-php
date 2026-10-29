@@ -5,7 +5,7 @@ services:
     public: true
   user.security:
     class: Module\User\SecurityManager
-    arguments: ['@user.accounts', '%framework.workspace%']
+    arguments: ['@user.accounts', '%framework.workspace%', '@Framework\Log\LoggerFactory']
     public: true
   user.roles:
     class: Module\User\RoleManager

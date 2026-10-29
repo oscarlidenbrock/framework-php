@@ -121,10 +121,11 @@ Treat this as a **target layout**, not a demand to create every directory immedi
 │   └── index.php
 ├── bin/
 │   └── console
-├── storage/
-│   ├── cache/
-│   ├── logs/
-│   └── files/
+├── var/
+│   ├── cache/{workspace}/
+│   ├── logs/{workspace}/
+│   ├── tmp/{workspace}/
+│   └── files/{workspace}/
 ├── tests/
 ├── docs/
 │   └── decisions/

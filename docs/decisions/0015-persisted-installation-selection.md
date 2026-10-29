@@ -2,6 +2,8 @@
 
 Status: accepted
 
+The snapshot path in this decision is superseded by [ADR 0019](0019-workspace-runtime-and-logs.md).
+
 ## Context
 
 Bootstrap must select modules before it can register their migrations, services, routes and permissions. It must select themes before building Twig and asset libraries. The current database registry is built from the enabled modules, so reading installation choices from the database during bootstrap would introduce a dependency cycle. Basic CLI help must also work before a database exists.

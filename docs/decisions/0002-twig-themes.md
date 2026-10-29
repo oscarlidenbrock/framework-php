@@ -2,6 +2,8 @@
 
 Status: Accepted
 
+The runtime cache path in this decision is superseded by [ADR 0019](0019-workspace-runtime-and-logs.md).
+
 ## Context
 
 Module templates need a deterministic theme override path without coupling PHP class autoloading to presentation. Active theme selection and asset publication become extension and deployment contracts.

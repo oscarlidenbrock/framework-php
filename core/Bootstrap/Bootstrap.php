@@ -26,6 +26,10 @@ use Framework\Module\Module;
 use Framework\Template\TemplateManager;
 use Framework\Block\BlockRegistry;
 use Framework\Block\RegionRenderer;
+use Framework\Log\LogReader;
+use Framework\Log\LoggerFactory;
+use Framework\Runtime\RuntimePaths;
+use Psr\Log\LoggerInterface;
 use Framework\Theme\ThemeManager;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -79,6 +83,13 @@ final class Bootstrap
         }
 
         $configuration = new ConfigManager($this->rootPath . '/config', $workspace, $this->configPath);
+        $logging = $configuration->file('logging.yaml') ?? ['logging' => []];
+        if (array_diff(array_keys($logging), ['logging']) !== [] || !is_array($logging['logging'] ?? null) || array_diff(array_keys($logging['logging']), ['max_bytes', 'retention']) !== []) {
+            throw new \InvalidArgumentException('Invalid logging configuration.');
+        }
+        $settings = $logging['logging'];
+        $paths = new RuntimePaths($this->rootPath, $workspace);
+        $loggerFactory = new LoggerFactory($paths, $settings['max_bytes'] ?? 1048576, $settings['retention'] ?? 5);
         $selection = (new InstallationSnapshot($this->rootPath, $workspace))->read();
         if ($selection !== null) {
             $configuration->applyInstallationSelection($selection);
@@ -90,13 +101,13 @@ final class Bootstrap
             throw new \RuntimeException('Composer autoload.php must return a ClassLoader.');
         }
 
-        $modules = new ModuleManager($this->rootPath, $loader, $config['module_discovery_cache']);
+        $modules = new ModuleManager($this->rootPath, $loader, $config['module_discovery_cache'], $workspace);
         $modules->discover();
         $modules->registerNamespaces();
         $enabled = $modules->enabled($config['enabled_modules']);
         $databases = new DatabaseRegistry($this->rootPath, $this->rootPath . '/config/database.yaml', $enabled, $configuration->file('database.yaml'), $workspace);
 
-        $themes = new ThemeManager($this->rootPath, $loader, $config['theme_discovery_cache']);
+        $themes = new ThemeManager($this->rootPath, $loader, $config['theme_discovery_cache'], $workspace);
         $themes->discover();
         $themes->registerNamespaces();
         $themes->select($config['active_theme'], $config['admin_theme']);
@@ -127,6 +138,10 @@ final class Bootstrap
         ]);
         $container->setParameter('framework.enabled_module_paths', array_column(array_map(static fn (Module $module): array => ['id' => $module->id, 'path' => $module->path], $enabled), 'path', 'id'));
         $container->set(ConfigManager::class, $configuration);
+        $container->set(RuntimePaths::class, $paths);
+        $container->set(LoggerFactory::class, $loggerFactory);
+        $container->set(LogReader::class, new LogReader($paths));
+        $container->set(LoggerInterface::class, $loggerFactory->channel('application'));
         $container->set(PermissionRegistry::class, $permissions);
         $blocks = new Definition(BlockRegistry::class);
         $blocks->setPublic(true);
@@ -220,7 +235,7 @@ final class Bootstrap
         $this->container = $container;
         $this->workspace = $workspace;
         $security = $container->has(RequestSecurityInterface::class) ? $container->get(RequestSecurityInterface::class) : null;
-        $this->kernel = new HttpKernel($routes, $container, $assets, $databases, $security);
+        $this->kernel = new HttpKernel($routes, $container, $assets, $databases, $security, $loggerFactory->channel('kernel'));
     }
 
     public function kernel(?Request $request = null): HttpKernel

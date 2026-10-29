@@ -19,6 +19,8 @@
 | Workspace-scoped site title and email overrides | Implemented in the `site` module; other configuration remains YAML |
 | Dynamic scalar content types, system fields and DBAL CRUD | Implemented; basic protected administration UI implemented, advanced fields planned |
 | Per-file asset HTML attributes and script placement | Implemented |
+| Workspace runtime paths and PSR-3 JSON file logging | Implemented first slice |
+| Permission-gated recent log list and detail | Implemented first slice; full archive search planned |
 | Theme regions and first block placement UI | Implemented; asset build pipeline planned |
 | Configurable content | Implemented first slice; advanced fields and presentation planned |
 

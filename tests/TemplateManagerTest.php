@@ -89,7 +89,7 @@ final class TemplateManagerTest extends TestCase
     public function testProductionTwigCacheOutsidePublic(): void
     {
         $this->templates(true)->render('@example/index.html.twig', ['message' => 'cached']);
-        self::assertDirectoryExists($this->root . '/storage/cache/twig');
+        self::assertDirectoryExists($this->root . '/var/cache/default/twig');
     }
 
     public function testRenderResponseAttachesLibrariesAndPreservesVariables(): void

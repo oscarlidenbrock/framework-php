@@ -8,6 +8,7 @@ use Framework\Security\AccessDeniedException;
 use Framework\Security\IdentityInterface;
 use Framework\Security\RequestSecurityInterface;
 use Framework\Security\CsrfInterface;
+use Framework\Log\LoggerFactory;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +21,7 @@ final class SecurityManager implements RequestSecurityInterface, CsrfInterface
     private bool $newCookie = false;
     private readonly string $dummyHash;
 
-    public function __construct(private readonly AccountManager $accounts, private readonly string $workspace)
+    public function __construct(private readonly AccountManager $accounts, private readonly string $workspace, private readonly ?LoggerFactory $logs = null)
     {
         $this->dummyHash = password_hash('unavailable-account', PASSWORD_DEFAULT);
     }
@@ -107,6 +108,7 @@ final class SecurityManager implements RequestSecurityInterface, CsrfInterface
         $row = $db->queryOne('SELECT attempts, window_start FROM login_attempts WHERE key_hash = :key', ['key' => $key]);
         $now = time();
         if ($row !== null && (int) $row['window_start'] + 900 > $now && (int) $row['attempts'] >= 5) {
+            $this->logs?->channel('user')->warning('Login throttled');
             return false;
         }
         $credentials = $this->accounts->credentials($email);
@@ -119,6 +121,7 @@ final class SecurityManager implements RequestSecurityInterface, CsrfInterface
             } else {
                 $db->execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE key_hash = :key', ['key' => $key]);
             }
+            $this->logs?->channel('user')->notice('Login failed');
             return false;
         }
         $db->execute('DELETE FROM login_attempts WHERE key_hash = :key', ['key' => $key]);

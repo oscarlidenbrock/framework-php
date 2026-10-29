@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Framework\Theme;
 
 use Composer\Autoload\ClassLoader;
+use Framework\Runtime\RuntimePaths;
 use Symfony\Component\Yaml\Yaml;
 
 final class ThemeManager
@@ -18,6 +19,7 @@ final class ThemeManager
         private readonly string $rootPath,
         private readonly ClassLoader $loader,
         private readonly bool $useCache = false,
+        private readonly string $workspace = 'default',
     ) {
     }
 
@@ -242,7 +244,7 @@ final class ThemeManager
     /** @return array<string, Theme>|null */
     private function readCache(): ?array
     {
-        $path = $this->rootPath . '/storage/cache/themes.json';
+        $path = (new RuntimePaths($this->rootPath, $this->workspace))->cache('themes.json');
         if (!is_file($path)) {
             return null;
         }
@@ -277,7 +279,7 @@ final class ThemeManager
     /** @param array<string, Theme> $themes */
     private function writeCache(array $themes): void
     {
-        $directory = $this->rootPath . '/storage/cache';
+        $directory = (new RuntimePaths($this->rootPath, $this->workspace))->cache();
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
             throw new \RuntimeException("Cannot create theme cache directory: {$directory}");
         }

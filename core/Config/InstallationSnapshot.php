@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Framework\Config;
 
+use Framework\Runtime\RuntimePaths;
+
 final class InstallationSnapshot
 {
     public function __construct(private readonly string $rootPath, private readonly string $workspace)
@@ -81,6 +83,6 @@ final class InstallationSnapshot
 
     private function path(): string
     {
-        return $this->rootPath . '/storage/cache/installation/' . $this->workspace . '.json';
+        return (new RuntimePaths($this->rootPath, $this->workspace))->cache('installation.json');
     }
 }

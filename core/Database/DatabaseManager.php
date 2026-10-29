@@ -16,6 +16,7 @@ use Doctrine\Migrations\Version\Direction;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
+use Framework\Runtime\RuntimePaths;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 final class DatabaseManager
@@ -72,7 +73,7 @@ final class DatabaseManager
         if ($this->entityManager !== null && $this->entityManager->isOpen()) {
             return $this->entityManager;
         }
-        $cache = new FilesystemAdapter('orm_' . $this->workspace . '_' . $this->name, 0, $this->rootPath . '/storage/cache/doctrine');
+        $cache = new FilesystemAdapter('orm_' . $this->name, 0, (new RuntimePaths($this->rootPath, $this->workspace))->cache('doctrine'));
         $configuration = ORMSetup::createAttributeMetadataConfig($this->mappingPaths, false, $this->name, $cache);
         $configuration->enableNativeLazyObjects(true);
 

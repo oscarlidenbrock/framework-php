@@ -29,7 +29,7 @@ The first existing file wins. Disabled modules register no Twig paths. The modul
 
 Controllers can inject `Framework\Template\TemplateManager` and return `renderResponse('@example/index.html.twig', ['libraries' => ['example/base']], ['title' => 'Example'])`. Direct `Response` controllers remain valid. Twig uses HTML autoescaping and strict variables; templates receive view data, not the service container. The default layout exposes `stylesheets`, `head_scripts` and `scripts` blocks, calling `assets(type, slot)` for CSS, JavaScript and fonts. Assets resolve before Twig renders `<head>`.
 
-Set `twig_cache: false` for development; production can enable compiled templates under `storage/cache/twig/` with auto reload disabled. Clear that directory after template changes. `theme_discovery_cache` stores validated theme manifests under `storage/cache/` and checks root, directory and manifest metadata on later boots. Library definitions are read on bootstrap, so new processes see changed `config/libraries.yaml` without a separate library cache.
+Set `twig_cache: false` for development; production can enable compiled templates under `var/cache/{workspace}/twig/` with auto reload disabled. Clear that directory after template changes. `theme_discovery_cache` stores validated theme manifests under `var/cache/{workspace}/` and checks root, directory and manifest metadata on later boots. Library definitions are read on bootstrap, so new processes see changed `config/libraries.yaml` without a separate library cache.
 
 ## Regions and blocks
 

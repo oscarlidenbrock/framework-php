@@ -12,7 +12,7 @@ services:
     public: true
   site.installation:
     class: Module\Site\InstallationManager
-    arguments: ['%framework.root_path%', '%framework.workspace%', '%framework.installation_selection%', '@Framework\Config\ConfigManager', '@Framework\Database\DatabaseRegistry', '@Framework\Module\ModuleManager', '@Framework\Theme\ThemeManager', '@?Framework\Security\RequestSecurityInterface']
+    arguments: ['%framework.root_path%', '%framework.workspace%', '%framework.installation_selection%', '@Framework\Config\ConfigManager', '@Framework\Database\DatabaseRegistry', '@Framework\Module\ModuleManager', '@Framework\Theme\ThemeManager', '@?Framework\Security\RequestSecurityInterface', '@Framework\Log\LoggerFactory']
     public: true
   site.extensions_controller:
     class: Module\Site\Controller\ExtensionsController

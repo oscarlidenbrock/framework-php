@@ -137,6 +137,39 @@ final class SecurityTest extends TestCase
         self::assertStringContainsString('Invalid credentials.', $blocked->getContent());
     }
 
+    public function testRecentLogsRequirePermissionAndHideCredentials(): void
+    {
+        $this->accounts->createFirstAdministrator('admin@example.com', 'long secure password');
+        self::assertSame(403, $this->request('/admin/logs')->getStatusCode());
+        self::assertSame(404, $this->request('/missing')->getStatusCode());
+        self::assertFileDoesNotExist($this->root . '/var/logs/testing/kernel.log');
+        $login = $this->request('/login');
+        $cookie = $this->cookie($login);
+        $csrf = $this->csrf($login);
+        $failed = $this->request('/login', 'POST', ['_csrf' => $csrf, 'email' => 'admin@example.com', 'password' => 'wrong-secret'], $cookie);
+        self::assertSame(401, $failed->getStatusCode());
+        $authenticated = $this->request('/login', 'POST', ['_csrf' => $csrf, 'email' => 'admin@example.com', 'password' => 'long secure password'], $cookie);
+        $this->core->container()->get(Framework\Log\LoggerFactory::class)->channel('application')->warning('<script>alert(1)</script>');
+        $unfiltered = $this->request('/admin/logs', cookies: $this->cookie($authenticated));
+        self::assertStringContainsString('&lt;script&gt;', $unfiltered->getContent());
+        self::assertStringNotContainsString('<script>alert(1)</script>', $unfiltered->getContent());
+        $logs = $this->request('/admin/logs?channel=user&level=notice', cookies: $this->cookie($authenticated));
+        self::assertSame(200, $logs->getStatusCode());
+        self::assertStringContainsString('Login failed', $logs->getContent());
+        self::assertSame(1, preg_match('#/admin/logs/([a-f0-9]{64})#', (string) $logs->getContent(), $match));
+        $detail = $this->request('/admin/logs/' . $match[1], cookies: $this->cookie($authenticated));
+        self::assertSame(200, $detail->getStatusCode());
+        self::assertStringContainsString('Login failed', $detail->getContent());
+        self::assertStringNotContainsString('wrong-secret', file_get_contents($this->root . '/var/logs/testing/user.log'));
+        self::assertStringNotContainsString($csrf, file_get_contents($this->root . '/var/logs/testing/user.log'));
+        $this->core->database()->execute('INSERT INTO users (email, password_hash, active, created_at, updated_at) VALUES (:email, :hash, 1, :created, :updated)', [
+            'email' => 'guest@example.com', 'hash' => password_hash('guest password 123', PASSWORD_DEFAULT), 'created' => '2026-10-29 00:00:00', 'updated' => '2026-10-29 00:00:00',
+        ]);
+        $guestLogin = $this->request('/login');
+        $guest = $this->request('/login', 'POST', ['_csrf' => $this->csrf($guestLogin), 'email' => 'guest@example.com', 'password' => 'guest password 123'], $this->cookie($guestLogin));
+        self::assertSame(403, $this->request('/admin/logs', cookies: $this->cookie($guest))->getStatusCode());
+    }
+
     public function testRoleOperationsRequirePermission(): void
     {
         $this->accounts->createFirstAdministrator('admin@example.com', 'long secure password');

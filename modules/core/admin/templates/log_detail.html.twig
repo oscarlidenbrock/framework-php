@@ -1,0 +1,8 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<h1>Log detail</h1>
+<p><a href="{{ list_url }}">Recent logs</a></p>
+<dl><dt>UTC</dt><dd>{{ entry.time }}</dd><dt>Channel</dt><dd>{{ entry.channel }}</dd><dt>Level</dt><dd>{{ entry.level }}</dd><dt>Message</dt><dd>{{ entry.message }}</dd></dl>
+<pre>{{ entry.context|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+{{ parent() }}
+{% endblock %}

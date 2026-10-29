@@ -13,3 +13,7 @@ services:
     class: Module\Admin\Controller\DashboardController
     arguments: ['@admin.dashboard', '@admin.page_renderer']
     public: true
+  admin.logs_controller:
+    class: Module\Admin\Controller\LogsController
+    arguments: ['@Framework\Log\LogReader', '@admin.page_renderer', '@Framework\Security\RequestSecurityInterface', '@Symfony\Component\Routing\Generator\UrlGeneratorInterface']
+    public: true

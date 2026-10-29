@@ -183,6 +183,7 @@ final class DatabaseTest extends TestCase
         self::assertNotSame($primaryEm, $legacyEm);
         self::assertSame([$defaultClass], array_map(static fn ($metadata): string => $metadata->name, $primaryEm->getMetadataFactory()->getAllMetadata()));
         self::assertSame([$legacyClass], array_map(static fn ($metadata): string => $metadata->name, $legacyEm->getMetadataFactory()->getAllMetadata()));
+        self::assertDirectoryExists($this->root . '/var/cache/default/doctrine');
         (new SchemaTool($primaryEm))->createSchema($primaryEm->getMetadataFactory()->getAllMetadata());
         (new SchemaTool($legacyEm))->createSchema($legacyEm->getMetadataFactory()->getAllMetadata());
         $primaryEm->persist(new $defaultClass(1, 'primary'));

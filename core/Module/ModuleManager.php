@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Framework\Module;
 
 use Composer\Autoload\ClassLoader;
+use Framework\Runtime\RuntimePaths;
 use Symfony\Component\Yaml\Yaml;
 
 final class ModuleManager
@@ -16,6 +17,7 @@ final class ModuleManager
         private readonly string $rootPath,
         private readonly ClassLoader $loader,
         private readonly bool $useCache = false,
+        private readonly string $workspace = 'default',
     ) {
     }
 
@@ -153,7 +155,7 @@ final class ModuleManager
     /** @return array<string, Module>|null */
     private function readCache(): ?array
     {
-        $path = $this->rootPath . '/storage/cache/modules.json';
+        $path = (new RuntimePaths($this->rootPath, $this->workspace))->cache('modules.json');
         if (!is_file($path)) {
             return null;
         }
@@ -185,7 +187,7 @@ final class ModuleManager
     /** @param array<string, Module> $modules */
     private function writeCache(array $modules): void
     {
-        $directory = $this->rootPath . '/storage/cache';
+        $directory = (new RuntimePaths($this->rootPath, $this->workspace))->cache();
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
             throw new \RuntimeException("Cannot create module cache directory: {$directory}");
         }

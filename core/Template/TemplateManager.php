@@ -8,6 +8,7 @@ use Framework\Asset\AssetExtension;
 use Framework\Asset\AssetManager;
 use Framework\Module\Module;
 use Framework\Theme\ThemeManager;
+use Framework\Runtime\RuntimePaths;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
@@ -47,7 +48,7 @@ final class TemplateManager
         }
 
         $this->twig = new Environment($loader, [
-            'cache' => $cache ? $rootPath . '/storage/cache/twig/' . $workspace : false,
+            'cache' => $cache ? (new RuntimePaths($rootPath, $workspace))->cache('twig') : false,
             'auto_reload' => !$cache,
             'autoescape' => 'html',
             'strict_variables' => true,

@@ -174,14 +174,18 @@ final class WorkspaceTest extends TestCase
         mkdir($this->root . '/themes/custom/contrast/templates/layouts', 0775, true);
         file_put_contents($this->root . '/themes/core/default/templates/layouts/base.html.twig', 'development layout');
         file_put_contents($this->root . '/themes/custom/contrast/templates/layouts/base.html.twig', 'production layout');
-        file_put_contents($this->root . '/config/app.yaml', "enabled_modules: []\nactive_theme: default\ntwig_cache: true\n");
+        file_put_contents($this->root . '/config/app.yaml', "enabled_modules: []\nactive_theme: default\ntwig_cache: true\nmodule_discovery_cache: true\ntheme_discovery_cache: true\n");
         $development = new Core($this->root, workspace: 'development');
         $production = new Core($this->root, workspace: 'production');
 
         self::assertSame('development layout', $development->templates()->render('@theme/layouts/base.html.twig'));
         self::assertSame('production layout', $production->templates()->render('@theme/layouts/base.html.twig'));
-        self::assertDirectoryExists($this->root . '/storage/cache/twig/development');
-        self::assertDirectoryExists($this->root . '/storage/cache/twig/production');
+        self::assertDirectoryExists($this->root . '/var/cache/development/twig');
+        self::assertDirectoryExists($this->root . '/var/cache/production/twig');
+        foreach (['development', 'production'] as $workspace) {
+            self::assertFileExists($this->root . '/var/cache/' . $workspace . '/modules.json');
+            self::assertFileExists($this->root . '/var/cache/' . $workspace . '/themes.json');
+        }
     }
 
     public function testMalformedYamlAndMissingWorkspaceFailClearly(): void

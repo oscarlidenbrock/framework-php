@@ -2,3 +2,7 @@ dashboard:
   label: Dashboard
   route: admin.dashboard
   permission: admin.access
+logs:
+  label: Logs
+  route: admin.logs
+  permission: admin.logs.view

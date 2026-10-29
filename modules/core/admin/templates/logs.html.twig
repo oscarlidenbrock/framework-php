@@ -1,0 +1,15 @@
+{% extends '@theme/layouts/base.html.twig' %}
+{% block content %}
+<h1>Recent logs</h1>
+<form method="get" action="{{ action }}">
+    <label>Channel <input name="channel" value="{{ channel|default('') }}"></label>
+    <label>Level <input name="level" value="{{ level|default('') }}"></label>
+    <button type="submit">Filter</button>
+</form>
+<table><thead><tr><th>UTC</th><th>Channel</th><th>Level</th><th>Message</th></tr></thead><tbody>
+{% for entry in entries %}
+<tr><td>{{ entry.time }}</td><td>{{ entry.channel }}</td><td>{{ entry.level }}</td><td><a href="{{ detail_base }}/{{ entry.id }}">{{ entry.message }}</a></td></tr>
+{% endfor %}
+</tbody></table>
+{{ parent() }}
+{% endblock %}

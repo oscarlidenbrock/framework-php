@@ -1,0 +1,3 @@
+logging:
+  max_bytes: 1048576
+  retention: 5

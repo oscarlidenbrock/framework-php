@@ -3,3 +3,15 @@ admin.dashboard:
   methods: [GET]
   controller: admin.dashboard_controller
   access: permission:admin.access
+admin.logs:
+  path: /admin/logs
+  methods: [GET]
+  controller: admin.logs_controller
+  access: permission:admin.logs.view
+admin.logs.detail:
+  path: /admin/logs/{id}
+  methods: [GET]
+  controller: admin.logs_controller
+  access: permission:admin.logs.view
+  requirements:
+    id: '[a-f0-9]{64}'
